@@ -14,6 +14,7 @@ public class Task extends Thread {
 
     private Integer status = 0;
     private InterfaceParams params;
+    private List<AmazonItem> result = new ArrayList<>();
 
     public Task(InterfaceParams parameters) {
         this.params = parameters;
@@ -31,12 +32,9 @@ public class Task extends Thread {
             if (!params.getPathToListing().isEmpty())
                 reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing())));
 
-            List<RequestTask> result = RequestManager.execute(reqTasks);
+            List<RequestTask> reqResult = RequestManager.execute(reqTasks);
 
-            List<AmazonItem> amazonItems = Amazon.parseItems(result);
-            for (AmazonItem item : amazonItems)
-                System.out.println(item);
-
+            result = Amazon.parseItems(reqResult);
             status = 100;
         } catch (Exception e) {
             e.printStackTrace();
@@ -68,7 +66,6 @@ public class Task extends Thread {
     }
 
     public List<AmazonItem> getResult() {
-
-        return new ArrayList<>();
+        return this.result;
     }
 }

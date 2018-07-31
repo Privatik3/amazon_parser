@@ -30,7 +30,7 @@ public class Handler {
 
         try {
             for (AmazonItem item : result)
-                Files.write(Paths.get(saveFile), item.toString().getBytes(), StandardOpenOption.APPEND);
+                Files.write(Paths.get(saveFile), (item.toString() + "\n").getBytes(), StandardOpenOption.APPEND);
         } catch (Exception e) {
             System.err.println("Не удалось сохранить отчёт");
             e.printStackTrace();

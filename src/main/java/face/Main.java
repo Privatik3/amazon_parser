@@ -47,7 +47,7 @@ public class Main {
 //            System.out.println("-----------------------------");
         }
 
-//        Manager.saveResultToFile(taskID);
+        Manager.saveResultToFile(taskID);
         Manager.clearTask(taskID);
 
     }

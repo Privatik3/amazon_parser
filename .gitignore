@@ -1,0 +1,5 @@
+
+/.idea/
+/amazon_parser.iml
+/src/main/java/parser/AmazonItem.java
+/src/main/java/parser/Amazon.java

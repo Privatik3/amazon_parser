@@ -4660,7 +4660,7 @@ span.amtchelp { background: url(../../https@images-na.ssl-images-amazon.com/imag
      
          
          
-             <div class="feature" id="availability_feature_div" data-feature-name="availability">
+             <div class="feature" id="availability_feature_div" data-feature-name="status">
          
      
 
@@ -4711,7 +4711,7 @@ span.amtchelp { background: url(../../https@images-na.ssl-images-amazon.com/imag
 
 
 
-<div class="a-section a-spacing-none" id="availability">
+<div class="a-section a-spacing-none" id="status">
     
     
     <span class="a-size-medium a-color-price">

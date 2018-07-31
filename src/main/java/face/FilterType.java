@@ -1,6 +1,6 @@
-package parser;
+package face;
 
-public enum ItemType {
+public enum FilterType {
 
     UNAVALIABLE,
     PRIME,

@@ -8,15 +8,15 @@ public class AmazonItem {
     private String vendor;
     private String productName;
     private String buyBoxSeller;
-    private String buyBoxPrice;
+    private Double buyBoxPrice;
     private String buyBoxShipping;
     private String brand;
-    private Integer partNumber;
-    private Integer itemModelNumber;
+    private String partNumber;
+    private String itemModelNumber;
     private String asinDomin;
-    private Integer rating;
-    private Integer quantity;
-    private Integer bSR;
+    private Double rating;
+    private String quantity;
+    private Double bSR;
     private String bSRCategory;
     private String dateFirstAvailable;
 
@@ -75,11 +75,11 @@ public class AmazonItem {
         this.buyBoxSeller = buyBoxSeller;
     }
 
-    public String getBuyBoxPrice() {
+    public Double getBuyBoxPrice() {
         return buyBoxPrice;
     }
 
-    public void setBuyBoxPrice(String buyBoxPrice) {
+    public void setBuyBoxPrice(Double buyBoxPrice) {
         this.buyBoxPrice = buyBoxPrice;
     }
 
@@ -99,19 +99,19 @@ public class AmazonItem {
         this.brand = brand;
     }
 
-    public Integer getPartNumber() {
+    public String getPartNumber() {
         return partNumber;
     }
 
-    public void setPartNumber(Integer partNumber) {
+    public void setPartNumber(String partNumber) {
         this.partNumber = partNumber;
     }
 
-    public Integer getItemModelNumber() {
+    public String getItemModelNumber() {
         return itemModelNumber;
     }
 
-    public void setItemModelNumber(Integer itemModelNumber) {
+    public void setItemModelNumber(String itemModelNumber) {
         this.itemModelNumber = itemModelNumber;
     }
 
@@ -123,27 +123,27 @@ public class AmazonItem {
         this.asinDomin = asinDomin;
     }
 
-    public Integer getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(Integer rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 
-    public Integer getQuantity() {
+    public String getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
+    public void setQuantity(String quantity) {
         this.quantity = quantity;
     }
 
-    public Integer getbSR() {
+    public Double getbSR() {
         return bSR;
     }
 
-    public void setbSR(Integer bSR) {
+    public void setbSR(Double bSR) {
         this.bSR = bSR;
     }
 

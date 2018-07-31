@@ -21,6 +21,22 @@
     </build>
 
     <dependencies>
+        <!-- Http client и многопоточность -->
+        <!-- https://mvnrepository.com/artifact/co.paralleluniverse/comsat-httpclient -->
+        <dependency>
+            <groupId>co.paralleluniverse</groupId>
+            <artifactId>comsat-httpclient</artifactId>
+            <version>0.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>co.paralleluniverse</groupId>
+            <artifactId>quasar-core</artifactId>
+            <version>0.7.10</version>
+            <classifier>jdk8</classifier>
+        </dependency>
+
+        <!-- Для парсинга -->
         <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>

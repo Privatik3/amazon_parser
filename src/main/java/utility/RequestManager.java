@@ -42,8 +42,8 @@ public class RequestManager {
                     create(cores).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(2048).
-                    setMaxConnTotal(2048).build();
+                    setMaxConnPerRoute(1024).
+                    setMaxConnTotal(1024).build();
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -82,7 +82,7 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 2048 ? 2048 : allProxy.size() )
+            for (int i = 0; tasks.size() < (allProxy.size() > 1024 ? 1024 : allProxy.size() )
                     && tasks.size() < (taskMultiply.size() * 5); i++) {
                 if (i == taskMultiply.size())
                     i = 0;

@@ -1,5 +1,6 @@
 package parser;
 
+import manager.RequestTask;
 import manager.Task;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -7,13 +8,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Amazon {
 
-    public static ArrayList<AmazonItem> parseItems(ArrayList<Task> tasks) {
+    public static List<AmazonItem> parseItems(List<RequestTask> tasks) {
 
         ArrayList<AmazonItem> result = new ArrayList<>();
-        for (Task task : tasks) {
+        for (RequestTask task : tasks) {
             AmazonItem item = new AmazonItem();
             item.setAsin(task.getId());
 

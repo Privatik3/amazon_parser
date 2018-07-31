@@ -1,7 +1,6 @@
 package face;
 
 import manager.Manager;
-import parser.ItemType;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,9 +24,9 @@ public class Main {
 
         // ----------------------------------
         List<Filter> filters = new ArrayList<>();
-        filters.add(new Filter(ItemType.NONE, 20000, 600000, true));
-        filters.add(new Filter(ItemType.UNAVALIABLE, 20000, 600000, true));
-        filters.add(new Filter(ItemType.PRIME, 20000, 600000, true));
+        filters.add(new Filter(FilterType.NONE, 20000, 600000, true));
+        filters.add(new Filter(FilterType.UNAVALIABLE, 20000, 600000, true));
+        filters.add(new Filter(FilterType.PRIME, 20000, 600000, true));
 
         parameters.setFilters(filters);
 

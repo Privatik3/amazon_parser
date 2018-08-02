@@ -17,9 +17,12 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
+import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -42,8 +45,8 @@ public class RequestManager {
                     create(cores).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(1024).
-                    setMaxConnTotal(1024).build();
+                    setMaxConnPerRoute(256).
+                    setMaxConnTotal(256).build();
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -52,6 +55,9 @@ public class RequestManager {
     }
 
     public static List<RequestTask> execute(List<RequestTask> tasks) throws Exception {
+
+        if (true)
+            return testMod(tasks);
 
         if (client == null)
             initClient();
@@ -82,7 +88,7 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 1024 ? 1024 : allProxy.size() )
+            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
                     && tasks.size() < (taskMultiply.size() * 5); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
@@ -163,9 +169,9 @@ public class RequestManager {
             taskMultiply.removeAll(result);
 
 //            if (tasks.get(0).getType() == ReqTaskType.ITEM) {
-                System.out.println("RESULT_SIZE: " + result.size());
-                int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
-                System.out.println("SEND PROGRESS: " + progress);
+            System.out.println("RESULT_SIZE: " + result.size());
+            int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
+            System.out.println("SEND PROGRESS: " + progress);
 //            }
         }
 
@@ -176,7 +182,30 @@ public class RequestManager {
                             + (new Date().getTime() - startTime) + " ms");
             System.out.println("=============================================================");
         }
+
+        // Кэшируем результаты для тест мода
+        /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);
+
+        for (RequestTask rTask : requestTasks) {
+            Files.write(Paths.get("html/" + rTask.getId()), rTask.getHtml().getBytes());
+        }*/
+
         return new ArrayList<>(result);
+    }
+
+    private static List<RequestTask> testMod(List<RequestTask> tasks) throws IOException {
+
+        ArrayList<RequestTask> result = new ArrayList<>();
+        for (RequestTask task : tasks) {
+            File f = new File("html/" + task.getId());
+            if (!f.exists())
+                continue;
+
+            task.setHtml(String.join("\n", Files.readAllLines(Paths.get(f.getAbsolutePath()))));
+            result.add(task);
+        }
+
+        return result;
     }
 
     public static void closeClient() throws IOException {

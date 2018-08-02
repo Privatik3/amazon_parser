@@ -1,6 +1,7 @@
 package manager;
 
 import excel.Handler;
+import face.Filter;
 import face.InterfaceParams;
 import parser.Amazon;
 import parser.AmazonItem;
@@ -34,7 +35,15 @@ public class Task extends Thread {
 
             List<RequestTask> reqResult = RequestManager.execute(reqTasks);
 
-            result = Amazon.parseItems(reqResult);
+
+            /*List<Filter> filters = params.getFilters();
+            filters.stream().filter()
+
+            for (AmazonItem item : amazonItems) {
+
+            }*/
+
+            result =  Amazon.parseItems(reqResult);
             status = 100;
         } catch (Exception e) {
             e.printStackTrace();

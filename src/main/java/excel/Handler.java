@@ -25,7 +25,7 @@ public class Handler {
 
     public static void writeResult(List<AmazonItem> result) {
 
-        String saveFile = "result.txt";
+        String saveFile = "result.csv";
 
         try {
             for (AmazonItem item : result)

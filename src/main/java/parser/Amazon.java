@@ -7,12 +7,18 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class Amazon {
 
     public static List<AmazonItem> parseItems(List<RequestTask> tasks) {
+
+        System.out.println("=============================================================");
+        System.out.println("НАЧИНАЕМ ОБРАБОТКУ ...");
+        System.out.println("=============================================================");
 
         ArrayList<AmazonItem> result = new ArrayList<>();
         for (RequestTask task : tasks) {
@@ -21,9 +27,6 @@ public class Amazon {
 
             Document doc = Jsoup.parse(task.getHtml());
             // Здесь гавнарит Александр
-
-
-
 
 
             Boolean availability = false;
@@ -62,14 +65,28 @@ public class Amazon {
             //TODO: Багает парс цены продавца, не всегда есть span тег.
             Double price = 0.00;
             try {
-              String pririceOne = doc.select("#priceblock_ourprice").text();
-                price =  Double.parseDouble(pririceOne.split("\\$")[1]);
+                String priceOne = doc.select("#priceblock_ourprice").text();
+                if (priceOne.length() > 2) {
+                    priceOne = priceOne.substring(1);
+                    priceOne = priceOne.split(" ")[0];
+                    price = Double.parseDouble(priceOne);
+                }
+                if (priceOne.length() < 1) {
+                    priceOne = doc.select("#olp_feature_div").text();
+                    priceOne = priceOne.substring(priceOne.indexOf("from") + 6, priceOne.indexOf(".")+3);
+                    priceOne = priceOne.replaceAll(",", "");
+                    price =  Double.parseDouble(priceOne);
+                }
             } catch (Exception ignored) {}
             item.setBuyBoxPrice(price);
 
             String Shipping = "";
             try {
                 Shipping = doc.select("#olp_feature_div span span.a-color-secondary").text();
+                if (Shipping.length() < 1) {
+                    Shipping = doc.select("#olp_feature_div").text();
+                    Shipping = Shipping.substring(Shipping.indexOf("+")+1);
+                }
             } catch (Exception ignored) {}
             item.setBuyBoxShipping(Shipping);
 
@@ -132,6 +149,14 @@ public class Amazon {
                         }
                     }
                 }
+                if (asinDomin.length() < 1) {
+                    asinDominEl = doc.select("td");
+                    for( Element el : asinDominEl ) {
+                        if (el.text().contains("ASIN")) {
+                            asinDomin = el.parent().select("td.value").text();
+                        }
+                    }
+                }
             } catch (Exception ignored) {}
             item.setAsinDomin(asinDomin);
 
@@ -145,10 +170,20 @@ public class Amazon {
                 }
                 textRating = getRating(doc, textRating, "#productDetails_db_sections tr td");
                 textRating = getRating(doc, textRating, "#productDetails_detailBullets_sections1 td");
+                if (textRating.length() < 1) {
+                    select = doc.select("td");
+                    for( Element el : select ) {
+                    if (el.text().contains("Customer Reviews")) {
+                        textRating = el.parent().select("td.value span").text();
+                        textRating = textRating.split(" out")[0];
+                    }
+                }
+                }
                 rating =  Double.parseDouble(textRating);
             } catch (Exception ignored) {}
             item.setRating(rating);
 
+            //TODO Остановка проверки
 
             String quantity = "0";
             try {
@@ -185,9 +220,9 @@ public class Amazon {
 
             String bSRCategory = "";
             try {
-                Elements  bSREl = doc.select("th");
+                Elements  bSRCategoryEl = doc.select("th");
 
-                for( Element el : bSREl ) {
+                for( Element el : bSRCategoryEl ) {
                     if (el.text().contains("Best Sellers Rank")) {
                         bSRCategory = el.parent().select("td").text();
                         bSRCategory = bSRCategory.split("in ")[1];
@@ -201,30 +236,24 @@ public class Amazon {
             } catch (Exception ignored) {}
             item.setbSRCategory(bSRCategory);
 
-//            String dateFirstAvailable = "";
-//            try {
-//                Elements  dateFirstAvailableEl = doc.select("th");
-//
-//                for( Element el : dateFirstAvailableEl ) {
-//                    if (el.text().contains("Date First Available")) {
-//                        dateFirstAvailable = el.parent().select("td").text();
-//                    }
-//                }
-//                if (dateFirstAvailable.length() < 1) {
-//                    dateFirstAvailable = getbSRCategory(doc , "#SalesRank");
-//                }
-//            } catch (Exception ignored) {}
-//            item.setbSRCategory(dateFirstAvailable);
-
-
-
-
-
-
-
-
-
-
+            String dateFirstAvailable = "";
+            try {
+                Elements dateFirstAvailableEl = doc.select("th");
+                for (Element el : dateFirstAvailableEl) {
+                    if (el.text().contains("Date first") || el.text().contains("Date First")) {
+                        dateFirstAvailable = el.parent().select("td").text();
+                        break;
+                    }
+                }
+                String[] split = dateFirstAvailable.split(" ");
+                String monthData = split[0];
+                String day = dateFirstAvailable.split(" ")[1];
+                day = day.replace(",", "");
+                String year = dateFirstAvailable.split(" ")[2];
+                int month = new SimpleDateFormat("MMMM", Locale.US).parse(monthData).getMonth() + 1;
+                dateFirstAvailable = month + "/" + day + "/" + year;
+            } catch (Exception ignored) {}
+            item.setDateFirstAvailable(dateFirstAvailable);
 
 
             // Здесь уже норм код
@@ -254,7 +283,7 @@ public class Amazon {
     private static String getRating(Document doc, String textRating, String select) {
         if (textRating.length() < 1) {
             Elements ratingEl = doc.select(select);
-            for( Element el : ratingEl ) {
+            for (Element el : ratingEl) {
                 if (el.text().contains("stars")) {
                     textRating = el.text().split("item ")[1];
                     textRating = textRating.split(" out")[0];

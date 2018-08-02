@@ -5,8 +5,8 @@ public class AmazonItem {
     private String asin;
     private Boolean availability;
     private Boolean promoOffer;
-    private String vendor;
-    private String productName;
+    private String vendor = "";
+    private String productName = "";
     private String buyBoxSeller;
     private Double buyBoxPrice;
     private String buyBoxShipping;
@@ -25,8 +25,8 @@ public class AmazonItem {
         return asin + ';' +
                 availability + ';' +
                 promoOffer + ';' +
-                vendor + ';' +
-                productName + ';' +
+                vendor.replaceAll(";", ",") + ';' +
+                productName.replaceAll(";", ",") + ';' +
                 buyBoxSeller + ';' +
                 buyBoxPrice + ';' +
                 buyBoxShipping + ';' +

@@ -192,13 +192,13 @@ public class RequestManager {
         for (Thread thread : dbThreads)
             thread.join();
 
-        if (tasks.size() > 0) {
+//        if (tasks.size() > 0) {
             System.out.println("=============================================================");
             System.out.println(
                     "Время затраченое на " + (tasks.get(0).getType() == ReqTaskType.ITEM ? "обьявления: " : "категории: ")
                             + (new Date().getTime() - startTime) + " ms");
             System.out.println("=============================================================");
-        }
+//        }
 
         // Кэшируем результаты для тест мода
         /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);

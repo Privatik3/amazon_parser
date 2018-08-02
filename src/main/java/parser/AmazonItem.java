@@ -16,31 +16,30 @@ public class AmazonItem {
     private String asinDomin;
     private Double rating;
     private String quantity;
-    private Double bSR;
+    private Integer bSR;
     private String bSRCategory;
     private String dateFirstAvailable;
 
     @Override
     public String toString() {
-        return "AmazonItem{" +
-                "asin='" + asin + '\'' +
-                ", availability=" + availability +
-                ", promoOffer=" + promoOffer +
-                ", vendor='" + vendor + '\'' +
-                ", productName='" + productName + '\'' +
-                ", buyBoxSeller='" + buyBoxSeller + '\'' +
-                ", buyBoxPrice='" + buyBoxPrice + '\'' +
-                ", buyBoxShipping='" + buyBoxShipping + '\'' +
-                ", brand='" + brand + '\'' +
-                ", partNumber=" + partNumber +
-                ", itemModelNumber=" + itemModelNumber +
-                ", asinDomin='" + asinDomin + '\'' +
-                ", rating=" + rating +
-                ", quantity=" + quantity +
-                ", bSR=" + bSR +
-                ", bSRCategory='" + bSRCategory + '\'' +
-                ", dateFirstAvailable='" + dateFirstAvailable + '\'' +
-                '}';
+        return asin + ';' +
+                availability + ';' +
+                promoOffer + ';' +
+                vendor + ';' +
+                productName + ';' +
+                buyBoxSeller + ';' +
+                buyBoxPrice + ';' +
+                buyBoxShipping + ';' +
+                brand + ';' +
+                partNumber + ';' +
+                itemModelNumber + ';' +
+                asinDomin + ';' +
+                rating + ';' +
+                quantity + ';' +
+                bSR + ';' +
+                bSRCategory + ';' +
+                dateFirstAvailable;
+
     }
 
     public Boolean getPromoOffer() {
@@ -139,11 +138,11 @@ public class AmazonItem {
         this.quantity = quantity;
     }
 
-    public Double getbSR() {
+    public Integer getbSR() {
         return bSR;
     }
 
-    public void setbSR(Double bSR) {
+    public void setbSR(Integer bSR) {
         this.bSR = bSR;
     }
 

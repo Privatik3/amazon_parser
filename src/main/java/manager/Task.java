@@ -1,5 +1,6 @@
 package manager;
 
+import db.DBHandler;
 import excel.Handler;
 import face.Filter;
 import face.InterfaceParams;
@@ -43,8 +44,10 @@ public class Task extends Thread {
 
             }*/
 
-            result =  Amazon.parseItems(reqResult);
+            result =  Amazon.parseItems(DBHandler.selectAllItems());
             status = 100;
+
+            DBHandler.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

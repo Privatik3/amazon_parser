@@ -56,6 +56,22 @@
             <artifactId>jsoup</artifactId>
             <version>1.11.3</version>
         </dependency>
+
+        <!-- Кэширование -->
+        <!-- https://mvnrepository.com/artifact/com.h2database/h2 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.197</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.googlecode.htmlcompressor/htmlcompressor -->
+        <dependency>
+            <groupId>com.googlecode.htmlcompressor</groupId>
+            <artifactId>htmlcompressor</artifactId>
+            <version>1.5.2</version>
+        </dependency>
+
     </dependencies>
 
 </project>

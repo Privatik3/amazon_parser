@@ -12,6 +12,11 @@ public class RequestTask {
         this.id = id;
     }
 
+    public RequestTask(String id, String html) {
+        this.id = id;
+        this.html = html;
+    }
+
     public String getHtml() {
         return html;
     }

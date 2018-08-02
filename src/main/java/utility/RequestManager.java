@@ -3,6 +3,7 @@ package utility;
 import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.httpclient.FiberHttpClientBuilder;
 import co.paralleluniverse.strands.SuspendableRunnable;
+import db.DBHandler;
 import manager.ReqTaskType;
 import manager.RequestTask;
 import org.apache.http.HttpEntity;
@@ -56,12 +57,13 @@ public class RequestManager {
 
     public static List<RequestTask> execute(List<RequestTask> tasks) throws Exception {
 
-        if (true)
+        if (false)
             return testMod(tasks);
 
         if (client == null)
             initClient();
 
+        ArrayList<Thread> dbThreads = new ArrayList<>();
         HashSet<RequestTask> result = new HashSet<>();
 
         ArrayList<RequestConfig> allProxy = ProxyManager.getProxy();
@@ -132,6 +134,7 @@ public class RequestManager {
                                 }*/
 
                                 task.setHtml(body);
+//                                task.setHtml("sdfsdfsdf");
                                 result.add(task);
                                 goodProxy.add(proxy);
                             }
@@ -163,17 +166,31 @@ public class RequestManager {
 
             cdl.await(10, TimeUnit.SECONDS);
 
-            if (result.size() == 0)
+            if (result.size() == 0 && tasks.size() != 0)
                 throw new Exception("За круг было получено 0 результатов");
 
+
+            ArrayList<RequestTask> items = new ArrayList<>(result);
+            Thread dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
+//            dbThread.setDaemon(true);
+            dbThread.start();
+            dbThreads.add(dbThread);
+
             taskMultiply.removeAll(result);
+            result.clear();
 
 //            if (tasks.get(0).getType() == ReqTaskType.ITEM) {
-            System.out.println("RESULT_SIZE: " + result.size());
-            int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
-            System.out.println("SEND PROGRESS: " + progress);
+//            System.out.println("RESULT_SIZE: " + result.size());
+//            int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
+//            System.out.println("SEND PROGRESS: " + progress);
 //            }
         }
+
+        System.out.println("=============================================================");
+        System.out.println("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
+        System.out.println("=============================================================");
+        for (Thread thread : dbThreads)
+            thread.join();
 
         if (tasks.size() > 0) {
             System.out.println("=============================================================");

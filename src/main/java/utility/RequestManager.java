@@ -46,8 +46,8 @@ public class RequestManager {
                     create(cores).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(256).
-                    setMaxConnTotal(256).build();
+                    setMaxConnPerRoute(512).
+                    setMaxConnTotal(512).build();
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -90,7 +90,7 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
+            for (int i = 0; tasks.size() < (allProxy.size() > 512 ? 512 : allProxy.size())
                     && tasks.size() < (taskMultiply.size() * 5); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
@@ -164,7 +164,7 @@ public class RequestManager {
 
             }
 
-            cdl.await(10, TimeUnit.SECONDS);
+            cdl.await(12, TimeUnit.SECONDS);
 
             if (result.size() == 0 && tasks.size() != 0)
                 throw new Exception("За круг было получено 0 результатов");
@@ -192,13 +192,13 @@ public class RequestManager {
         for (Thread thread : dbThreads)
             thread.join();
 
-//        if (tasks.size() > 0) {
+        if (tasks.size() > 0) {
             System.out.println("=============================================================");
             System.out.println(
                     "Время затраченое на " + (tasks.get(0).getType() == ReqTaskType.ITEM ? "обьявления: " : "категории: ")
                             + (new Date().getTime() - startTime) + " ms");
             System.out.println("=============================================================");
-//        }
+        }
 
         // Кэшируем результаты для тест мода
         /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);

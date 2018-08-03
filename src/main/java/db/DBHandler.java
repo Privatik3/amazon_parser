@@ -15,7 +15,7 @@ public class DBHandler {
 
     static {
         try {
-            conn = DriverManager.getConnection("jdbc:h2:C:/IdeaProjects/amazon_parser/cache");
+            conn = DriverManager.getConnection("jdbc:h2:C:/Developers/amazon_parser/cache");
             conn.setAutoCommit(true);
 
             compressor.setRemoveComments(true);
@@ -102,8 +102,6 @@ public class DBHandler {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
-            close();
         }
 
         return result;

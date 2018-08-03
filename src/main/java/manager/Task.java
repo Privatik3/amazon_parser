@@ -10,6 +10,7 @@ import utility.RequestManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 public class Task extends Thread {
@@ -27,6 +28,8 @@ public class Task extends Thread {
     public void run() {
 
         try {
+            long time = new Date().getTime();
+
             List<RequestTask> reqTasks = new ArrayList<>();
             if (!params.getUrlListing().isEmpty())
                 reqTasks.addAll(queryCategory());
@@ -46,6 +49,10 @@ public class Task extends Thread {
 
             result =  Amazon.parseItems(DBHandler.selectAllItems());
             status = 100;
+
+            System.out.println("=============================================================");
+            System.out.println("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + (new Date().getTime() - time) + " ms");
+            System.out.println("=============================================================");
 
             DBHandler.close();
         } catch (Exception e) {

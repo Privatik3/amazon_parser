@@ -1,8 +1,8 @@
 package face;
 
-import db.DBHandler;
 import manager.Manager;
 
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ public class Main {
                 return
                         new SimpleDateFormat("HH:mm:ss.SSS").format(new Date()) + " -> " +
                         record.getMessage() + "\r\n";
-
             }
         });
 
@@ -50,18 +49,19 @@ public class Main {
 
         // ----------------------------------
         List<Filter> filters = new ArrayList<>();
-        filters.add(new Filter(FilterType.NONE, 20000, 600000, true));
-        filters.add(new Filter(FilterType.UNAVALIABLE, 20000, 600000, true));
-        filters.add(new Filter(FilterType.PRIME, 20000, 600000, true));
+        filters.add(new Filter(FilterType.NONE, 50000, 600000, true));
+        filters.add(new Filter(FilterType.UNAVALIABLE, 50000, 600000, true));
+        filters.add(new Filter(FilterType.PRIME, 50000, 600000, true));
 
         parameters.setFilters(filters);
 
         // ----------------------------------
-        parameters.setRatingMin(3.0);
-        parameters.setRatingMax(5.0);
+        filters.add(new Filter(FilterType.RATING, 3.0, 5.0, true));
 
-        parameters.setCreationFrom(new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2012"));
-        parameters.setCreationTo(new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2018"));
+        long dateFrom = new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2012").getTime();
+        long dateTo = new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2018").getTime();
+        filters.add(new Filter(FilterType.CREATION_DATE, dateFrom, dateTo, true));
+
 
         log.info("Инициализируем таск, получаем таск ID");
         String taskID = Manager.initTask(parameters);

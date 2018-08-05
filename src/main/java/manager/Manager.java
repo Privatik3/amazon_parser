@@ -45,7 +45,7 @@ public class Manager {
 
     public static void clearTask(String taskID) {
 
-        log.info("Прерываем работу таска если жив, удаляем его с листа тасков");
+        log.fine("Прерываем работу таска если жив, удаляем его с листа тасков");
         Task task = tasks.get(taskID);
         if (task.isAlive())
             task.interrupt();

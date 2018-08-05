@@ -19,13 +19,6 @@ public class InterfaceParams {
     // ----------------------------------
     private List<Filter> filters;
 
-    // ----------------------------------
-    private Double ratingMin;
-    private Double ratingMax;
-
-    private Date creationFrom;
-    private Date creationTo;
-
     public String getUrlListing() {
         return urlListing;
     }
@@ -80,37 +73,5 @@ public class InterfaceParams {
 
     public void setFilters(List<Filter> filters) {
         this.filters = filters;
-    }
-
-    public Double getRatingMin() {
-        return ratingMin;
-    }
-
-    public void setRatingMin(Double ratingMin) {
-        this.ratingMin = ratingMin;
-    }
-
-    public Double getRatingMax() {
-        return ratingMax;
-    }
-
-    public void setRatingMax(Double ratingMax) {
-        this.ratingMax = ratingMax;
-    }
-
-    public Date getCreationFrom() {
-        return creationFrom;
-    }
-
-    public void setCreationFrom(Date creationFrom) {
-        this.creationFrom = creationFrom;
-    }
-
-    public Date getCreationTo() {
-        return creationTo;
-    }
-
-    public void setCreationTo(Date creationTo) {
-        this.creationTo = creationTo;
     }
 }

@@ -1,8 +1,6 @@
 package parser;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class AmazonItem {
 
@@ -22,7 +20,7 @@ public class AmazonItem {
     private String quantity;
     private Integer bSR;
     private String bSRCategory;
-    private String dateFirstAvailable;
+    private Date dateFirstAvailable;
     private String newHref;
     private HashSet<String> searchReq = new HashSet<>();
     private List<AmazonOffer> priceNew = new ArrayList<>();
@@ -193,11 +191,11 @@ public class AmazonItem {
         this.bSRCategory = bSRCategory;
     }
 
-    public String getDateFirstAvailable() {
+    public Date getDateFirstAvailable() {
         return dateFirstAvailable;
     }
 
-    public void setDateFirstAvailable(String dateFirstAvailable) {
+    public void setDateFirstAvailable(Date dateFirstAvailable) {
         this.dateFirstAvailable = dateFirstAvailable;
     }
 
@@ -215,5 +213,19 @@ public class AmazonItem {
 
     public void setAvailability(Boolean availability) {
         this.availability = availability;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AmazonItem that = (AmazonItem) o;
+        return Objects.equals(asin, that.asin);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(asin);
     }
 }

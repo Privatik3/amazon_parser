@@ -15,12 +15,6 @@ public class DBHandler {
     private static HtmlCompressor compressor = new HtmlCompressor();
     private static Connection conn;
 
-    private static PrintStream err;
-
-    public static void setErr(PrintStream err) {
-        DBHandler.err = err;
-    }
-
     static {
         try {
             conn = DriverManager.getConnection("jdbc:h2:C:/Developers/amazon_parser/cache");
@@ -70,6 +64,39 @@ public class DBHandler {
 //            System.setErr(err);
             e.printStackTrace();
 //            System.setErr(null);
+        } finally {
+            items.clear();
+            items = null;
+
+            try {
+                if (insertStatement != null) {
+                    insertStatement.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void addAmazonSearch(ArrayList<RequestTask> items) {
+
+        if (items.size() == 0) return;
+
+        PreparedStatement insertStatement = null;
+        try {
+            String sql = "INSERT INTO AMAZON_SEARCH (ASIN, HTML) values (?, ?)";
+            insertStatement = conn.prepareStatement(sql);
+
+            for (RequestTask item : items) {
+
+                insertStatement.setString(1, item.getId());
+                insertStatement.setString(2, compressor.compress(item.getHtml()));
+                insertStatement.addBatch();
+            }
+
+            insertStatement.executeBatch();
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             items.clear();
             items = null;

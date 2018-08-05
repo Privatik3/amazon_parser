@@ -2,9 +2,18 @@ package parser;
 
 public class AmazonOffer {
 
+    private String asin;
     private String price;
     private String shipingInfo;
     private String seller;
+
+    public String getAsin() {
+        return asin;
+    }
+
+    public void setAsin(String asin) {
+        this.asin = asin;
+    }
 
     public String getPrice() {
         return price;

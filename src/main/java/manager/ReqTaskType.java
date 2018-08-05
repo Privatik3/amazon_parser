@@ -3,5 +3,6 @@ package manager;
 public enum ReqTaskType {
 
     CATEGORY,
-    ITEM
+    ITEM,
+    SEARCH
 }

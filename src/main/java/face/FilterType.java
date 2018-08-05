@@ -4,5 +4,7 @@ public enum FilterType {
 
     UNAVALIABLE,
     PRIME,
-    NONE
+    NONE,
+    RATING,
+    CREATION_DATE
 }

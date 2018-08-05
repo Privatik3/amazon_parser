@@ -12,9 +12,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
@@ -47,12 +50,12 @@ public class RequestManager {
             int cores = Runtime.getRuntime().availableProcessors();
 
             client = FiberHttpClientBuilder.
-                    create(cores).
+                    create(cores * 2).
                     setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(256).
-                    setMaxConnTotal(256).build();
+                    setMaxConnPerRoute(512).
+                    setMaxConnTotal(512).build();
 
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
@@ -77,7 +80,7 @@ public class RequestManager {
 
         final long startTime = new Date().getTime();
         final int initTaskSize = tasks.size();
-        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
+        final int bufferSize = tasks.size() < 200 ? tasks.size() : 200;
 
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
@@ -88,7 +91,7 @@ public class RequestManager {
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
             log.info("-------------------------------------------------");
-            log.info("Инициализирую новую волну, осталось: " + taskMultiply.size() + " тасков" );
+            log.info("Инициализирую новую волну, осталось: " + taskMultiply.size() + " тасков");
 
             if (wave != 0) {
                 parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
@@ -100,8 +103,8 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
-                    && tasks.size() < (taskMultiply.size() * 2); i++) {
+            for (int i = 0; tasks.size() < (allProxy.size() > 512 ? 512 : allProxy.size())
+                    && tasks.size() < (taskMultiply.size() * 4); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
 
@@ -122,10 +125,13 @@ public class RequestManager {
                 new Fiber<Void>((SuspendableRunnable) () -> {
                     HttpEntity entity = null;
                     try {
-                        String taskUrl = URLDecoder.decode(task.getUrl(), StandardCharsets.UTF_8.toString())
-                                .replaceAll("https", "http");
+//                        String taskUrl = URLDecoder.decode(task.getUrl(), StandardCharsets.UTF_8.toString())
+//                                .replaceAll("https", "http");
+                        String taskUrl = task.getUrl().replaceAll("https", "http");
                         HttpGet request = new HttpGet(taskUrl);
                         request.setConfig(proxy);
+
+                        request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
 
                         CloseableHttpResponse response = client.execute(request);
 //                        System.out.println(response.getStatusLine());
@@ -165,12 +171,24 @@ public class RequestManager {
             taskMultiply.removeAll(result);
             if (result.size() > bufferSize || tasks.size() == 0) {
                 ArrayList<RequestTask> items = new ArrayList<>(result);
-                Thread dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
+
+                Thread dbThread = null;
+
+                switch (items.get(0).getType()) {
+                    case ITEM:
+                        dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
+                        break;
+                    case SEARCH:
+                        dbThread = new Thread(() -> DBHandler.addAmazonSearch(items));
+                        break;
+                }
+
                 dbThread.setDaemon(true);
                 dbThread.start();
                 dbThreads.add(dbThread);
 
                 result.clear();
+
             }
 
 //            if (tasks.get(0).getType() == ReqTaskType.ITEM) {
@@ -180,16 +198,12 @@ public class RequestManager {
 //            }
         }
 
-//        System.out.println("=============================================================");
-//        System.out.println("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
-//        System.out.println("=============================================================");
         log.info("-------------------------------------------------");
-        log.info("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
-        log.info("Время затраченое на парсинг: " + (new Date().getTime() - startTime) + " ms");
+        log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
+        log.info("Ждём завершение кэширования данных ...");
 
         for (Thread thread : dbThreads)
             thread.join();
-
 
 
         // Кэшируем результаты для тест мода

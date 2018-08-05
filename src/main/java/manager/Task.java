@@ -2,15 +2,16 @@ package manager;
 
 import db.DBHandler;
 import excel.Handler;
+import face.Filter;
 import face.InterfaceParams;
 import parser.Amazon;
 import parser.AmazonItem;
+import parser.AmazonSearch;
 import utility.RequestManager;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Task extends Thread {
@@ -40,17 +41,36 @@ public class Task extends Thread {
                 reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing())));
 
             log.info("Выполняем запрос на выкачку листинга");
-            RequestManager.execute(reqTasks);
+//            RequestManager.execute(reqTasks);
+            reqTasks.clear();
 
 
-            /*List<Filter> filters = params.getFilters();
-            filters.stream().filter()
+            result = Amazon.parseItems(DBHandler.selectAllItems());
 
-            for (AmazonItem item : amazonItems) {
+            log.info("-------------------------------------------------");
+            log.info("Выполняем фильтрацию полученных результатов");
+            filterResult();
+            log.info("Фильтрация завершена, осталось " + result.size() + " позиций");
 
-            }*/
+            log.info("-------------------------------------------------");
+            log.info("Формируем и выкачиваем поисковые запросы");
 
-            result =  Amazon.parseItems(DBHandler.selectAllItems());
+
+            for (AmazonItem item : result) {
+                Integer num = 0;
+                for (String req : item.getSearchReq()) {
+                    RequestTask task = new RequestTask(item.getAsin() + ":" + String.valueOf(num));
+                    task.setUrl("https://www.amazon.com/s?field-keywords=" + URLEncoder.encode(req, "UTF-8"));
+                    task.setType(ReqTaskType.SEARCH);
+
+                    reqTasks.add(task);
+                }
+            }
+
+//            RequestManager.execute(reqTasks);
+
+            List<AmazonSearch> searchResult = Amazon.parseSearchReq(reqTasks);
+
             status = 100;
 
             log.info("-------------------------------------------------");
@@ -59,9 +79,59 @@ public class Task extends Thread {
 
             DBHandler.close();
         } catch (Exception e) {
+            log.info("-------------------------------------------------");
+            log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
+            log.log(Level.SEVERE, "Exception: ", e);
             e.printStackTrace();
         }
 
+    }
+
+    private void filterResult() {
+        Iterator<AmazonItem> iterator = result.iterator();
+
+        out:
+        while (iterator.hasNext()) {
+            AmazonItem item = iterator.next();
+
+            for (Filter filter : params.getFilters()) {
+                if (!filter.getEnable()) continue;
+
+                switch (filter.getType()) {
+                    case NONE:
+                        if ((item.getAvailability() && !item.getPromoOffer()) &&
+                                (item.getbSR() < filter.getMin() || item.getbSR() > filter.getMax()))
+                            iterator.remove();
+
+                        continue out;
+                    case PRIME:
+                        if (item.getPromoOffer() &&
+                                (item.getbSR() < filter.getMin() || item.getbSR() > filter.getMax()))
+                            iterator.remove();
+
+                        continue;
+                    case UNAVALIABLE:
+                        if (!item.getAvailability() &&
+                                (item.getbSR() < filter.getMin() || item.getbSR() > filter.getMax()))
+                            iterator.remove();
+
+                        continue out;
+                    case RATING:
+                        if (item.getRating() < filter.getMin() || item.getRating() > filter.getMax())
+                            iterator.remove();
+
+                        continue out;
+                    case CREATION_DATE:
+                        System.out.println(item.getDateFirstAvailable());
+                        double dateCreation = (double)item.getDateFirstAvailable().getTime();
+                        if (dateCreation < filter.getMin()
+                                        || dateCreation > filter.getMax())
+                            iterator.remove();
+
+                        continue out;
+                }
+            }
+        }
     }
 
     private Collection<? extends RequestTask> convertToTasks(List<String> asins) {

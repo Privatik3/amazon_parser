@@ -1,5 +1,9 @@
 package parser;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 public class AmazonItem {
 
     private String asin;
@@ -19,10 +23,16 @@ public class AmazonItem {
     private Integer bSR;
     private String bSRCategory;
     private String dateFirstAvailable;
+    private String newHref;
+    private HashSet<String> searchReq = new HashSet<>();
+    private List<AmazonOffer> priceNew = new ArrayList<>();
+
+
 
     @Override
     public String toString() {
-        return asin + ';' +
+        String result =
+                asin + ';' +
                 availability + ';' +
                 promoOffer + ';' +
                 vendor.replaceAll(";", ",") + ';' +
@@ -38,8 +48,37 @@ public class AmazonItem {
                 quantity + ';' +
                 bSR + ';' +
                 bSRCategory + ';' +
-                dateFirstAvailable;
+                dateFirstAvailable + ';' +
+                newHref + ';';
 
+        for (AmazonOffer req : priceNew)
+            result += req + " | ";
+
+        return result.substring(0, result.length() - (priceNew.size() > 0 ? 3 : 1));
+    }
+
+    public List<AmazonOffer> getPriceNew() {
+        return priceNew;
+    }
+
+    public void setPriceNew(List<AmazonOffer> priceNew) {
+        this.priceNew = priceNew;
+    }
+
+    public HashSet<String> getSearchReq() {
+        return searchReq;
+    }
+
+    public void setSearchReq(HashSet<String> searchReq) {
+        this.searchReq = searchReq;
+    }
+
+    public String getNewHref() {
+        return newHref;
+    }
+
+    public void setNewHref(String newHref) {
+        this.newHref = newHref;
     }
 
     public Boolean getPromoOffer() {

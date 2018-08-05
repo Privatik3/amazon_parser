@@ -44,10 +44,11 @@ public class RequestManager {
 
             client = FiberHttpClientBuilder.
                     create(cores).
+                    setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(512).
-                    setMaxConnTotal(512).build();
+                    setMaxConnPerRoute(256).
+                    setMaxConnTotal(256).build();
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -57,8 +58,9 @@ public class RequestManager {
 
     public static List<RequestTask> execute(List<RequestTask> tasks) throws Exception {
 
-        if (false)
+        if (false) {
             return testMod(tasks);
+        }
 
         if (client == null)
             initClient();
@@ -71,6 +73,7 @@ public class RequestManager {
 
         final long startTime = new Date().getTime();
         final int initTaskSize = tasks.size();
+        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
 
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
@@ -90,8 +93,8 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 512 ? 512 : allProxy.size())
-                    && tasks.size() < (taskMultiply.size() * 5); i++) {
+            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
+                    && tasks.size() < (taskMultiply.size() * 2); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
 
@@ -164,20 +167,21 @@ public class RequestManager {
 
             }
 
-            cdl.await(12, TimeUnit.SECONDS);
+            cdl.await(10, TimeUnit.SECONDS);
 
             if (result.size() == 0 && tasks.size() != 0)
                 throw new Exception("За круг было получено 0 результатов");
 
-
-            ArrayList<RequestTask> items = new ArrayList<>(result);
-            Thread dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
-//            dbThread.setDaemon(true);
-            dbThread.start();
-            dbThreads.add(dbThread);
-
             taskMultiply.removeAll(result);
-            result.clear();
+            if (result.size() > bufferSize || tasks.size() == 0) {
+                ArrayList<RequestTask> items = new ArrayList<>(result);
+                Thread dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
+                dbThread.setDaemon(true);
+                dbThread.start();
+                dbThreads.add(dbThread);
+
+                result.clear();
+            }
 
 //            if (tasks.get(0).getType() == ReqTaskType.ITEM) {
 //            System.out.println("RESULT_SIZE: " + result.size());

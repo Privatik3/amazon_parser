@@ -1,5 +1,7 @@
 package manager;
 
+import java.util.Objects;
+
 public class RequestTask {
 
     private String id;
@@ -47,5 +49,19 @@ public class RequestTask {
 
     public void setType(ReqTaskType type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RequestTask that = (RequestTask) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(id);
     }
 }

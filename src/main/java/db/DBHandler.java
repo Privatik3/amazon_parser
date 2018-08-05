@@ -3,15 +3,23 @@ package db;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import manager.RequestTask;
 
+import java.io.PrintStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class DBHandler {
 
     private static HtmlCompressor compressor = new HtmlCompressor();
     private static Connection conn;
+
+    private static PrintStream err;
+
+    public static void setErr(PrintStream err) {
+        DBHandler.err = err;
+    }
 
     static {
         try {
@@ -41,7 +49,7 @@ public class DBHandler {
         }
     }
 
-    public static void addAmazonItems(List<RequestTask> items) {
+    public static void addAmazonItems(ArrayList<RequestTask> items) {
 
         if (items.size() == 0) return;
 
@@ -59,7 +67,9 @@ public class DBHandler {
 
             insertStatement.executeBatch();
         } catch (Exception e) {
+//            System.setErr(err);
             e.printStackTrace();
+//            System.setErr(null);
         } finally {
             items.clear();
             items = null;
@@ -85,9 +95,6 @@ public class DBHandler {
 
             while (rs.next()) {
                 String asin = rs.getString(2);
-                if (result.contains(asin))
-                    continue;
-
                 String html = rs.getString(3);
 
                 result.add(new RequestTask(asin, html));

@@ -1,5 +1,6 @@
 package face;
 
+import db.DBHandler;
 import manager.Manager;
 
 import java.text.ParseException;
@@ -11,6 +12,7 @@ public class Main {
 
     public static void main(String[] args) throws ParseException, InterruptedException {
 
+        DBHandler.setErr(System.err);
         System.setErr(null);
 
         InterfaceParams parameters = new InterfaceParams();
@@ -44,7 +46,7 @@ public class Main {
 
         Integer status = 0;
         while ((status = Manager.getStatus(taskID)) < 100) {
-            Thread.sleep(1000);
+            Thread.sleep(5000);
 //            System.out.println(status);
 //            System.out.println("-----------------------------");
         }

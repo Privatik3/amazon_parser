@@ -30,9 +30,9 @@ public class ProxyManager {
                     PROXIES.add(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD_STRICT)
                             .setProxy(new HttpHost(hostName, port, "http"))
-                            .setConnectionRequestTimeout(10 * 1000)
-                            .setSocketTimeout(10 * 1000)
-                            .setConnectTimeout(10 * 1000).build());
+                            .setConnectionRequestTimeout(8 * 1000)
+                            .setSocketTimeout(8 * 1000)
+                            .setConnectTimeout(8 * 1000).build());
                 } catch (Exception ignore) {}
             }
         } catch (IOException e) {

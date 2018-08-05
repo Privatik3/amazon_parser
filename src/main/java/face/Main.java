@@ -6,15 +6,37 @@ import manager.Manager;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.*;
 
 public class Main {
 
+    private static Logger log = Logger.getLogger(Main.class.getName());
+
     public static void main(String[] args) throws ParseException, InterruptedException {
 
-        DBHandler.setErr(System.err);
+        Logger system = Logger.getLogger("");
+        Handler[] handlers = system.getHandlers();
+        system.removeHandler(handlers[0]);
+
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new Formatter() {
+            @Override
+            public String format(LogRecord record) {
+                return
+                        new SimpleDateFormat("HH:mm:ss.SSS").format(new Date()) + " -> " +
+                        record.getMessage() + "\r\n";
+
+            }
+        });
+
+        system.addHandler(handler);
+        system.setUseParentHandlers(false);
+
         System.setErr(null);
 
+        log.info("Читаем все параметры с пользовательского интерфейса.");
         InterfaceParams parameters = new InterfaceParams();
 
         parameters.setUrlListing("");
@@ -41,6 +63,7 @@ public class Main {
         parameters.setCreationFrom(new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2012"));
         parameters.setCreationTo(new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2018"));
 
+        log.info("Инициализируем таск, получаем таск ID");
         String taskID = Manager.initTask(parameters);
         Manager.process(taskID);
 

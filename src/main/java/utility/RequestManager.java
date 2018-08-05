@@ -6,6 +6,7 @@ import co.paralleluniverse.strands.SuspendableRunnable;
 import db.DBHandler;
 import manager.ReqTaskType;
 import manager.RequestTask;
+import manager.Task;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -30,9 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class RequestManager {
 
+    private static Logger log = Logger.getLogger(RequestManager.class.getName());
     private static CloseableHttpClient client = null;
     private static String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
 
@@ -51,16 +55,16 @@ public class RequestManager {
                     setMaxConnTotal(256).build();
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            System.err.println("Не удалось инициализировать HTTP Client");
+            log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
+            log.log(Level.SEVERE, "Exception: ", e);
         }
     }
 
-    public static List<RequestTask> execute(List<RequestTask> tasks) throws Exception {
+    public static void execute(List<RequestTask> tasks) throws Exception {
 
-        if (false) {
-            return testMod(tasks);
-        }
+//        if (false) {
+//            return testMod(tasks);
+//        }
 
         if (client == null)
             initClient();
@@ -83,12 +87,15 @@ public class RequestManager {
 
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
+            log.info("-------------------------------------------------");
+            log.info("Инициализирую новую волну, осталось: " + taskMultiply.size() + " тасков" );
 
             if (wave != 0) {
                 parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
-                System.out.println("=============================================================");
-                System.out.println("PARSE SPEED: " + parseSpeed);
-                System.out.println("=============================================================");
+                log.info("Средние количество результатов за круг: " + parseSpeed);
+//                System.out.println("=============================================================");
+//                System.out.println("PARSE SPEED: " + parseSpeed);
+//                System.out.println("=============================================================");
             }
             wave = taskMultiply.size();
 
@@ -128,38 +135,21 @@ public class RequestManager {
 
                             if (body.contains("CB327533540")) {
 
-                                /*if (isPhone) {
-                                    Header[] allHeaders = response.getHeaders("Set-Cookie");
-                                    System.out.println(body);
-                                    for (Header header : allHeaders)
-                                        System.out.println(header.getName() + ": " + header.getValue());
-                                    System.out.println("---------------------------------------");
-                                }*/
-
                                 task.setHtml(body);
-//                                task.setHtml("sdfsdfsdf");
                                 result.add(task);
                                 goodProxy.add(proxy);
                             }
-//                            else {
-//                                if (isPhone)
-//                                    Files.write(Paths.get("fail.txt"), (body + "\n\n\n\n\n\n").getBytes(), StandardOpenOption.APPEND);
-//                            }
-
                         }
-
-//                    if (response.getStatusLine().getStatusCode() == 403)
-//                        System.out.println(proxy.getProxy());
-
-                        // end of snippet
-                    } catch (IOException ex) {
-//                        System.err.println("ERROR: " + ex.getMessage());
+                    } catch (IOException e) {
+//                        log.log(Level.SEVERE, "Ошибка внутри вайба");
+//                        log.log(Level.SEVERE, "Exception: ", e);
                     } finally {
-//                        cdl.countDown();
                         if (entity != null) {
                             try {
                                 EntityUtils.consume(entity);
-                            } catch (IOException ignored) {
+                            } catch (IOException ex) {
+                                log.log(Level.SEVERE, "Не удалось освободить Entity, ресурсы заблокированы");
+                                log.log(Level.SEVERE, "Exception: ", ex);
                             }
                         }
                     }
@@ -190,19 +180,17 @@ public class RequestManager {
 //            }
         }
 
-        System.out.println("=============================================================");
-        System.out.println("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
-        System.out.println("=============================================================");
+//        System.out.println("=============================================================");
+//        System.out.println("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
+//        System.out.println("=============================================================");
+        log.info("-------------------------------------------------");
+        log.info("ЗАКОНЧИЛИ ПАРСИТЬ, ЖДЁМ ПОКА ЗАНЕСЁТ В БАЗУ");
+        log.info("Время затраченое на парсинг: " + (new Date().getTime() - startTime) + " ms");
+
         for (Thread thread : dbThreads)
             thread.join();
 
-        if (tasks.size() > 0) {
-            System.out.println("=============================================================");
-            System.out.println(
-                    "Время затраченое на " + (tasks.get(0).getType() == ReqTaskType.ITEM ? "обьявления: " : "категории: ")
-                            + (new Date().getTime() - startTime) + " ms");
-            System.out.println("=============================================================");
-        }
+
 
         // Кэшируем результаты для тест мода
         /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);
@@ -210,8 +198,6 @@ public class RequestManager {
         for (RequestTask rTask : requestTasks) {
             Files.write(Paths.get("html/" + rTask.getId()), rTask.getHtml().getBytes());
         }*/
-
-        return new ArrayList<>(result);
     }
 
     private static List<RequestTask> testMod(List<RequestTask> tasks) throws IOException {

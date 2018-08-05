@@ -9,16 +9,21 @@ import org.jsoup.select.Elements;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Logger;
 
 public class Amazon {
 
+    private static Logger log = Logger.getLogger(Task.class.getName());
+
     public static List<AmazonItem> parseItems(List<RequestTask> tasks) {
 
-        System.out.println("=============================================================");
-        System.out.println("НАЧИНАЕМ ОБРАБОТКУ ...");
-        System.out.println("=============================================================");
+        log.info("-------------------------------------------------");
+        log.info("Начинаем обработку листингов");
+
+        long start = new Date().getTime();
 
         ArrayList<AmazonItem> result = new ArrayList<>();
         for (RequestTask task : tasks) {
@@ -260,6 +265,7 @@ public class Amazon {
             result.add(item);
         }
 
+        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
         return result;
     }
 

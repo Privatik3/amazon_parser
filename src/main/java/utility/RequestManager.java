@@ -80,7 +80,7 @@ public class RequestManager {
 
         final long startTime = new Date().getTime();
         final int initTaskSize = tasks.size();
-        final int bufferSize = tasks.size() < 200 ? tasks.size() : 200;
+        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
 
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 

@@ -30,8 +30,7 @@ public class Amazon {
             Document doc = Jsoup.parse(task.getHtml());
             // Здесь гавнарит Александр
 
-
-           Boolean availability = false;
+            Boolean availability = false;
             try {
                 Elements inStockStatus = doc.select("div#availability");
                 availability = inStockStatus.size() > 0 && !inStockStatus.text().contains("unavailable");
@@ -92,12 +91,23 @@ public class Amazon {
             } catch (Exception ignored) {}
             item.setBuyBoxShipping(Shipping);
 
+
+
+//            try {
+//               String shipingConverter = item.getBuyBoxShipping();
+//               if (shipingConverter.contains("")) {
+//
+//
+//
+//               }
+//            }catch (Exception ignored) {}
+
             String brand = "";
             try {
                 Elements  brandEl = doc.select("#product-specification-table tr");
                 for( Element el : brandEl ) {
                     if (el.text().contains("Brand")) {
-                       brand = el.select("td").text();
+                        brand = el.select("td").text();
                     }
                 }
             } catch (Exception ignored) {}
@@ -176,11 +186,11 @@ public class Amazon {
                 if (textRating.length() < 1) {
                     select = doc.select("td");
                     for( Element el : select ) {
-                    if (el.text().contains("Customer Reviews")) {
-                        textRating = el.parent().select("td.value span").text();
-                        textRating = textRating.split(" out")[0];
+                        if (el.text().contains("Customer Reviews")) {
+                            textRating = el.parent().select("td.value span").text();
+                            textRating = textRating.split(" out")[0];
+                        }
                     }
-                }
                 }
                 rating =  Double.parseDouble(textRating);
             } catch (Exception ignored) {}
@@ -267,43 +277,18 @@ public class Amazon {
             HashSet<String> searchReq = new HashSet<>();
             try {
                 if (!vendor.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getPartNumber()));
+                    searchReq.add(String.format("%s+%s", item.getVendor(), item.getPartNumber()));
 
                 if (!vendor.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getItemModelNumber()));
+                    searchReq.add(String.format("%s+%s", item.getVendor(), item.getItemModelNumber()));
 
                 if (!brand.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getPartNumber()));
+                    searchReq.add(String.format("%s+%s", item.getBrand(), item.getPartNumber()));
 
                 if (!brand.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getItemModelNumber()));
+                    searchReq.add(String.format("%s+%s", item.getBrand(), item.getItemModelNumber()));
             } catch (Exception ignored) {}
             item.setSearchReq(searchReq);
-
-//            //TODO Парсинг селекторов NEW
-//            List<AmazonOffer> priceNew = new ArrayList<>();
-//            try {
-//                Elements priceNewEl = doc.select("#olpOfferList p.olpShippingInfo");
-//
-//                for (int i = 0; i < (priceNewEl.size() > 5 ? 5 : priceNewEl.size()); i++) {
-//                    AmazonOffer offer = new AmazonOffer();
-//                    Element el = priceNewEl.get(i);
-//                    offer.setShipingInfo(el.text());
-//                    priceNewEl = el.parent().select("span");
-//                    offer.setPrice(priceNewEl.get(0).text());
-//                    String SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3").text();
-//                    offer.setSeller(SellerNew);
-//                    if (SellerNew.length() < 1) {
-//                        SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3 img").attr("alt");
-//                        offer.setSeller(SellerNew);
-//                    }
-//
-//                }
-//            } catch (Exception ignored) {
-//            }
-//            item.setPriceNew(priceNew);
-
-
 
             // Здесь уже норм код
             result.add(item);
@@ -343,21 +328,45 @@ public class Amazon {
         return textRating;
     }
 
-    public static List<AmazonOffer> parseOffers(List<RequestTask> tasks) {
+    public static List<ItemOffer> parseOffers(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
         log.info("Начинаем обработку оферов");
 
         long start = new Date().getTime();
 
-        ArrayList<AmazonOffer> result = new ArrayList<>();
+        ArrayList<ItemOffer> result = new ArrayList<>();
         for (RequestTask task : tasks) {
-            AmazonOffer item = new AmazonOffer();
+            ItemOffer item = new ItemOffer();
             item.setAsin(task.getId());
 
             Document doc = Jsoup.parse(task.getHtml());
             // Здесь гавнарит Александр
 
+            //TODO Парсинг селекторов NEW
+            List<Offer> priceNew = new ArrayList<>();
+            try {
+                Elements priceNewEl = doc.select("#olpOfferList p.olpShippingInfo");
+
+                for (int i = 0; i < (priceNewEl.size() > 5 ? 5 : priceNewEl.size()); i++) {
+                    Offer offer = new Offer();
+                    Element el = priceNewEl.get(i);
+
+                    offer.setShipingInfo(el.text());
+                    priceNewEl = el.parent().select("span");
+
+                    offer.setPrice(priceNewEl.get(0).text());
+                    String SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3").text();
+
+                    if (SellerNew.length() < 1)
+                        SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3 img").attr("alt");
+
+                    offer.setSeller(SellerNew);
+
+                    priceNew.add(offer);
+                }
+            } catch (Exception ignored) {}
+            item.setOffers(priceNew);
 
             // Здесь уже норм код
             result.add(item);
@@ -384,11 +393,13 @@ public class Amazon {
             // Здесь гавнарит Александр
 
             List<String> asins = new ArrayList<>();
-            asins.add("sdfsdfsdf");
-            asins.add("sdfsdfsdf");
-            asins.add("sdfsdfsdf");
-            asins.add("sdfsdfsdf");
-
+            try {
+                Elements asinNewEl = doc.select("li[id^='result']");
+                for (int i = 0; i < (asinNewEl.size() > 3 ? 3 : asinNewEl.size()); i++) {
+                    Element el = asinNewEl.get(i);
+                    asins.add(el.attr("data-asin"));
+                }
+            } catch (Exception ignored) {}
             item.setAsins(asins);
 
             // Здесь уже норм код
@@ -399,4 +410,6 @@ public class Amazon {
 
         return result;
     }
+
+
 }

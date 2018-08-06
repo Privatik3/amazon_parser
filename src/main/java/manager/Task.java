@@ -68,8 +68,8 @@ public class Task extends Thread {
             }
 
 //            RequestManager.execute(reqTasks);
-
-            List<AmazonSearch> searchResult = Amazon.parseSearchReq(reqTasks);
+            reqTasks.clear();
+            List<AmazonSearch> searchResult = Amazon.parseSearchReq(DBHandler.selectAllSearchResults());
 
             status = 100;
 

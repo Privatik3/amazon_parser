@@ -23,7 +23,7 @@ public class AmazonItem {
     private Date dateFirstAvailable;
     private String newHref;
     private HashSet<String> searchReq = new HashSet<>();
-    private List<AmazonOffer> priceNew = new ArrayList<>();
+    private List<ItemOffer> priceNew = new ArrayList<>();
 
 
 
@@ -49,17 +49,17 @@ public class AmazonItem {
                 dateFirstAvailable + ';' +
                 newHref + ';';
 
-        for (AmazonOffer req : priceNew)
+        for (ItemOffer req : priceNew)
             result += req + " | ";
 
         return result.substring(0, result.length() - (priceNew.size() > 0 ? 3 : 1));
     }
 
-    public List<AmazonOffer> getPriceNew() {
+    public List<ItemOffer> getPriceNew() {
         return priceNew;
     }
 
-    public void setPriceNew(List<AmazonOffer> priceNew) {
+    public void setPriceNew(List<ItemOffer> priceNew) {
         this.priceNew = priceNew;
     }
 

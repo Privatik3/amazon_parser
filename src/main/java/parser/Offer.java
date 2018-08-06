@@ -1,19 +1,10 @@
 package parser;
 
-public class AmazonOffer {
+public class Offer {
 
-    private String asin;
     private String price;
     private String shipingInfo;
     private String seller;
-
-    public String getAsin() {
-        return asin;
-    }
-
-    public void setAsin(String asin) {
-        this.asin = asin;
-    }
 
     public String getPrice() {
         return price;
@@ -37,14 +28,5 @@ public class AmazonOffer {
 
     public void setSeller(String seller) {
         this.seller = seller;
-    }
-
-    @Override
-    public String toString() {
-        return "AmazonOffer{" +
-                "price='" + price + '\'' +
-                ", shipingInfo='" + shipingInfo + '\'' +
-                ", seller='" + seller + '\'' +
-                '}';
     }
 }

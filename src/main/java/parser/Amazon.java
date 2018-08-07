@@ -56,26 +56,24 @@ public class Amazon {
             } catch (Exception ignored) {}
             item.setProductName(name);
 
-            //TODO: Багает парс имени продавца, не всегда есть а тег.
             String sellerName = "";
             try {
                 sellerName = doc.select("#merchant-info a").get(0).text();
             } catch (Exception ignored) {}
             item.setBuyBoxSeller(sellerName);
 
-            //TODO: Багает парс цены продавца, не всегда есть span тег.
             Double price = 0.00;
             try {
-                String priceOne = doc.select("#priceblock_ourprice").text();
+                String priceOne = doc.select("#newBuyBoxPrice").text();
                 if (priceOne.length() > 2) {
                     priceOne = priceOne.substring(1);
                     priceOne = priceOne.split(" ")[0];
                     price = Double.parseDouble(priceOne);
                 }
                 if (priceOne.length() < 1) {
-                    priceOne = doc.select("#olp_feature_div").text();
-                    priceOne = priceOne.substring(priceOne.indexOf("from") + 6, priceOne.indexOf(".")+3);
-                    priceOne = priceOne.replaceAll(",", "");
+                    priceOne = doc.select("#price_inside_buybox").text();
+                    priceOne = priceOne.substring(1);
+                    priceOne = priceOne.split(" ")[0];
                     price =  Double.parseDouble(priceOne);
                 }
             } catch (Exception ignored) {}
@@ -83,24 +81,41 @@ public class Amazon {
 
             String Shipping = "";
             try {
-                Shipping = doc.select("#olp_feature_div span span.a-color-secondary").text();
+                Shipping = doc.select("#price-shipping-message").text();
+                if (Shipping.length() > 1) {
+                    Shipping = Shipping.split("&")[1];
+                    Shipping = Shipping.split("&")[0];
+                    Shipping = Shipping.split(".D")[0];
+                }
                 if (Shipping.length() < 1) {
-                    Shipping = doc.select("#olp_feature_div").text();
+                    Shipping = doc.select("#shippingMessageInsideBuyBox_feature_div").text();
                     Shipping = Shipping.substring(Shipping.indexOf("+")+1);
+                }
+                if (Shipping.length() < 1) {
+                    Shipping = doc.select("#price-shipping-message").text();
                 }
             } catch (Exception ignored) {}
             item.setBuyBoxShipping(Shipping);
 
 
-
-//            try {
-//               String shipingConverter = item.getBuyBoxShipping();
-//               if (shipingConverter.contains("")) {
-//
-//
-//
-//               }
-//            }catch (Exception ignored) {}
+            //TODO Заменить 5 на значение пользователя
+            String shipingConverter = item.getBuyBoxShipping();
+            try {
+               if (shipingConverter.contains("over")) {
+                item.setPriceShipping(price + 5);
+                shipingConverter = "Этот текст здесь нужен";
+               }
+               if (shipingConverter.contains("FREE")) {
+                item.setPriceShipping(price);
+               }
+               if (shipingConverter.contains("$")) {
+                   shipingConverter = shipingConverter.substring(2).split(" ")[0];
+                    item.setPriceShipping(price + Double.parseDouble(shipingConverter));
+               }
+               if (shipingConverter.length() < 1) {
+                   item.setPriceShipping(price);
+                }
+            }catch (Exception ignored) {}
 
             String brand = "";
             try {
@@ -171,7 +186,7 @@ public class Amazon {
                     }
                 }
             } catch (Exception ignored) {}
-            item.setAsinDomin(asinDomin);
+            item.setAsinDomin(asinDomin.trim());
 
             String textRating = "";
             Double rating = -1.0;
@@ -196,7 +211,6 @@ public class Amazon {
             } catch (Exception ignored) {}
             item.setRating(rating);
 
-            //TODO Остановка проверки
 
             String quantity = "0";
             try {
@@ -268,12 +282,14 @@ public class Amazon {
             } catch (Exception ignored) {}
             item.setDateFirstAvailable(dateCreation);
 
-            String newHref = "";
+            Boolean href = false;
             try {
-                newHref = "https://www.amazon.com" + doc.select("#olp_feature_div a").attr("href");
+                String newHref = doc.select("#olp_feature_div").text();
+                if (newHref.contains("new")) {
+                    href = true;
+                }
             } catch (Exception ignored) {}
-//            item.setNewHref(newHref);
-            item.setNew(false); // TODO Теперь, new это Boolean значения.
+            item.setNew(href); // TODO Теперь, new это Boolean значения.
                                 // Нужно проверять есть ли в товара new оферы, если есть ставим true
 
             HashSet<String> searchReq = new HashSet<>();
@@ -348,20 +364,19 @@ public class Amazon {
             //TODO Парсинг селекторов NEW
             List<Offer> priceNew = new ArrayList<>();
             try {
-                Elements priceNewEl = doc.select("#olpOfferList p.olpShippingInfo");
+                Elements priceNewEl = doc.select("div.olpOffer");
 
                 for (int i = 0; i < (priceNewEl.size() > 5 ? 5 : priceNewEl.size()); i++) {
                     Offer offer = new Offer();
                     Element el = priceNewEl.get(i);
 
-                    offer.setShipingInfo(el.text());
-                    priceNewEl = el.parent().select("span");
+                    offer.setShipingInfo(el.select("p.olpShippingInfo").text());
+                    offer.setPrice(el.select(".olpPriceColumn span").get(0).text());
 
-                    offer.setPrice(priceNewEl.get(0).text());
-                    String SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3").text();
+                    String SellerNew = el.select(".olpSellerColumn h3").text();
 
                     if (SellerNew.length() < 1)
-                        SellerNew = priceNewEl.parents().parents().select(".olpSellerColumn h3 img").attr("alt");
+                        SellerNew = el.select(".olpSellerColumn h3 img").attr("alt");
 
                     offer.setSeller(SellerNew);
 

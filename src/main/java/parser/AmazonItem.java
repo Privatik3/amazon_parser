@@ -23,6 +23,7 @@ public class AmazonItem {
     private String bSRCategory;
     private Date dateFirstAvailable;
     private Boolean isNew;
+    private Double PriceShipping;
     private HashSet<String> searchReq = new HashSet<>();
     private List<Offer> offers = new ArrayList<>();
     private List<ItemShortInfo> searchInfo = new ArrayList<>();
@@ -47,8 +48,8 @@ public class AmazonItem {
                 quantity + ';' +
                 bSR + ';' +
                 bSRCategory + ';' +
-                new SimpleDateFormat("yyyy.MM.dd").format(dateFirstAvailable) + ';';
-//                newHref + ';';
+                new SimpleDateFormat("yyyy.MM.dd").format(dateFirstAvailable) + ';' +
+                PriceShipping;
 
         result += "OFFERS: ";
         for (Offer offer : offers) {
@@ -71,6 +72,14 @@ public class AmazonItem {
 
     public void setNew(Boolean aNew) {
         isNew = aNew;
+    }
+
+    public Double getPriceShipping() {
+        return PriceShipping;
+    }
+
+    public void setPriceShipping(Double priceShipping) {
+        PriceShipping = priceShipping;
     }
 
     public List<ItemShortInfo> getSearchInfo() {

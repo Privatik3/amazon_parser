@@ -184,6 +184,9 @@ public class RequestManager {
                     case OFFER:
                         dbThread = new Thread(() -> DBHandler.addAmazonOffers(items));
                         break;
+                    case CATEGORY:
+                        dbThread = new Thread(() -> DBHandler.addAmazonPages(items));
+                        break;
                 }
 
                 dbThread.setDaemon(true);
@@ -191,7 +194,6 @@ public class RequestManager {
                 dbThreads.add(dbThread);
 
                 result.clear();
-
             }
 
 //            if (tasks.get(0).getType() == ReqTaskType.ITEM) {

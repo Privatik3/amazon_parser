@@ -4,15 +4,14 @@ import db.DBHandler;
 import excel.Handler;
 import face.Filter;
 import face.InterfaceParams;
-import parser.Amazon;
-import parser.AmazonItem;
-import parser.AmazonSearch;
+import parser.*;
 import utility.RequestManager;
 
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class Task extends Thread {
 
@@ -41,7 +40,7 @@ public class Task extends Thread {
                 reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing())));
 
             log.info("Выполняем запрос на выкачку листинга");
-//            RequestManager.execute(reqTasks);
+            RequestManager.execute(reqTasks);
             reqTasks.clear();
 
 
@@ -59,7 +58,7 @@ public class Task extends Thread {
             for (AmazonItem item : result) {
                 Integer num = 0;
                 for (String req : item.getSearchReq()) {
-                    RequestTask task = new RequestTask(item.getAsin() + ":" + String.valueOf(num));
+                    RequestTask task = new RequestTask(item.getAsin() + ":" + String.valueOf(num++));
                     task.setUrl("https://www.amazon.com/s?field-keywords=" + URLEncoder.encode(req, "UTF-8"));
                     task.setType(ReqTaskType.SEARCH);
 
@@ -67,9 +66,95 @@ public class Task extends Thread {
                 }
             }
 
-//            RequestManager.execute(reqTasks);
+            RequestManager.execute(reqTasks);
             reqTasks.clear();
             List<AmazonSearch> searchResult = Amazon.parseSearchReq(DBHandler.selectAllSearchResults());
+
+            log.info("-------------------------------------------------");
+            log.info("Докачиваем товары полученные после поиска");
+            reqTasks = getTaskFromSearchResult(searchResult);
+            DBHandler.clearAmazonItems();
+
+            RequestManager.execute(reqTasks);
+            reqTasks.clear();
+
+            List<AmazonItem> searchItems = Amazon.parseItems(DBHandler.selectAllItems());
+
+            log.info("-------------------------------------------------");
+            log.info("Сливаем полеченный результат");
+            for (AmazonItem item : result) {
+                if (item.getSearchReq().size() == 0)
+                    continue;
+
+                ArrayList<ItemShortInfo> searchInfo = new ArrayList<>();
+
+                List<AmazonSearch> search = searchResult.stream()
+                        .filter(x -> x.getRelatedAsin().equals(item.getAsin()))
+                        .collect(Collectors.toList());
+
+                HashSet<String> asins = new HashSet<>();
+                search.forEach(s -> asins.addAll(s.getAsins()));
+
+                for (String asin : asins) {
+                    Optional<AmazonItem> first = searchItems.stream()
+                            .filter(x -> x.getAsin().equals(asin))
+                            .findFirst();
+
+                    if (first.isPresent()) {
+                        addInfo(searchInfo, asin, first);
+                    } else {
+                        first = result.stream()
+                                .filter(x -> x.getAsin().equals(asin))
+                                .findFirst();
+
+                        if (first.isPresent()) {
+                            addInfo(searchInfo, asin, first);
+                        }
+                    }
+                }
+
+                item.setSearchInfo(searchInfo);
+            }
+            searchItems.clear();
+            searchResult.clear();
+
+            log.info("Формируем список запросов на выкачку оферов");
+            HashSet<String> asins = new HashSet<>();
+            for (AmazonItem item : result) {
+                if (item.getAvailability() && item.getNew())
+                    asins.add(item.getAsin());
+
+                for (ItemShortInfo info : item.getSearchInfo())
+                    if (item.getAvailability() && item.getNew())
+                        asins.add(info.getAsin());
+            }
+
+            reqTasks = convertToOfferTasks(asins);
+            asins.clear();
+
+            RequestManager.execute(reqTasks);
+            reqTasks.clear();
+
+            List<ItemOffer> offers = Amazon.parseOffers(DBHandler.selectAllOffers());
+            log.info("-------------------------------------------------");
+            log.info("Заполняем оферы в результирующей выборке");
+
+            for (AmazonItem item : result) {
+                String mainAsin = item.getAsin();
+
+                Optional<ItemOffer> mainOffer = offers.stream().filter(offer -> offer.getAsin().equals(mainAsin)).findFirst();
+                mainOffer.ifPresent(itemOffer -> item.setOffers(itemOffer.getOffers()));
+
+                for (ItemShortInfo info : item.getSearchInfo()) {
+                    String searchAsin = info.getAsin();
+
+                    Optional<ItemOffer> shortOffer = offers.stream().filter(offer -> offer.getAsin().equals(searchAsin)).findFirst();
+                    if (shortOffer.isPresent() && shortOffer.get().getOffers().size() > 0)
+                        info.setFirstOffer(shortOffer.get().getOffers().get(0));
+                }
+
+            }
+            offers.clear();
 
             status = 100;
 
@@ -85,6 +170,50 @@ public class Task extends Thread {
             e.printStackTrace();
         }
 
+    }
+
+    private void addInfo(ArrayList<ItemShortInfo> searchInfo, String asin, Optional<AmazonItem> first) {
+        ItemShortInfo info = new ItemShortInfo();
+        info.setAsin(asin);
+        info.setAvailability(first.get().getAvailability());
+        info.setIsNew(first.get().getNew());
+
+        searchInfo.add(info);
+    }
+
+    private List<RequestTask> convertToOfferTasks(HashSet<String> asins) {
+
+        List<RequestTask> reqTasks = new ArrayList<>();
+        for (String asin : asins) {
+            RequestTask task = new RequestTask(asin);
+            task.setUrl("https://www.amazon.com/gp/offer-listing/" + asin + "?f_new=true");
+            task.setType(ReqTaskType.OFFER);
+            reqTasks.add(task);
+        }
+
+        return reqTasks;
+    }
+
+    private List<RequestTask> getTaskFromSearchResult(List<AmazonSearch> searchResult) {
+        List<RequestTask> reqTasks;
+        HashSet<String> asins = new HashSet<>();
+        searchResult.forEach(e -> asins.addAll(e.getAsins()));
+
+        Iterator<String> asinIter = asins.iterator();
+        while (asinIter.hasNext()) {
+
+            String asin = asinIter.next();
+            Optional<AmazonItem> first = result.stream()
+                    .filter(x -> x.getAsin().equals(asin))
+                    .findFirst();
+
+            if (first.isPresent())
+                asinIter.remove();
+        }
+
+        reqTasks = convertToTasks(asins);
+        asins.clear();
+        return reqTasks;
     }
 
     private void filterResult() {
@@ -123,9 +252,9 @@ public class Task extends Thread {
                         continue out;
                     case CREATION_DATE:
                         System.out.println(item.getDateFirstAvailable());
-                        double dateCreation = (double)item.getDateFirstAvailable().getTime();
+                        double dateCreation = (double) item.getDateFirstAvailable().getTime();
                         if (dateCreation < filter.getMin()
-                                        || dateCreation > filter.getMax())
+                                || dateCreation > filter.getMax())
                             iterator.remove();
 
                         continue out;
@@ -134,7 +263,7 @@ public class Task extends Thread {
         }
     }
 
-    private Collection<? extends RequestTask> convertToTasks(List<String> asins) {
+    private List<RequestTask> convertToTasks(Collection<String> asins) {
 
         log.info("Формирую ссылки на листинги");
         List<RequestTask> result = new ArrayList<>();

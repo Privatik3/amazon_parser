@@ -4,5 +4,6 @@ public enum ReqTaskType {
 
     CATEGORY,
     ITEM,
-    SEARCH
+    SEARCH,
+    OFFER
 }

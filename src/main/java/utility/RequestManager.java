@@ -54,8 +54,8 @@ public class RequestManager {
                     setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(512).
-                    setMaxConnTotal(512).build();
+                    setMaxConnPerRoute(256).
+                    setMaxConnTotal(256).build();
 
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
@@ -80,7 +80,7 @@ public class RequestManager {
 
         final long startTime = new Date().getTime();
         final int initTaskSize = tasks.size();
-        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
+        final int bufferSize = tasks.size() < 50 ? tasks.size() : 50;
 
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
@@ -103,7 +103,7 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 512 ? 512 : allProxy.size())
+            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
                     && tasks.size() < (taskMultiply.size() * 4); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
@@ -169,7 +169,7 @@ public class RequestManager {
                 throw new Exception("За круг было получено 0 результатов");
 
             taskMultiply.removeAll(result);
-            if (result.size() > bufferSize || tasks.size() == 0) {
+            if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {
                 ArrayList<RequestTask> items = new ArrayList<>(result);
 
                 Thread dbThread = null;
@@ -180,6 +180,9 @@ public class RequestManager {
                         break;
                     case SEARCH:
                         dbThread = new Thread(() -> DBHandler.addAmazonSearch(items));
+                        break;
+                    case OFFER:
+                        dbThread = new Thread(() -> DBHandler.addAmazonOffers(items));
                         break;
                 }
 

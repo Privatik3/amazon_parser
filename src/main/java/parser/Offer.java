@@ -29,4 +29,11 @@ public class Offer {
     public void setSeller(String seller) {
         this.seller = seller;
     }
+
+    @Override
+    public String toString() {
+        return "[price='" + price + '\'' +
+                ", shipingInfo='" + shipingInfo + '\'' +
+                ", seller='" + seller + '\'' + ']';
+    }
 }

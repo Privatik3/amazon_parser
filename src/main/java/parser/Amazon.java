@@ -272,21 +272,23 @@ public class Amazon {
             try {
                 newHref = "https://www.amazon.com" + doc.select("#olp_feature_div a").attr("href");
             } catch (Exception ignored) {}
-            item.setNewHref(newHref);
+//            item.setNewHref(newHref);
+            item.setNew(false); // TODO Теперь, new это Boolean значения.
+                                // Нужно проверять есть ли в товара new оферы, если есть ставим true
 
             HashSet<String> searchReq = new HashSet<>();
             try {
                 if (!vendor.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s+%s", item.getVendor(), item.getPartNumber()));
+                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getPartNumber()));
 
                 if (!vendor.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s+%s", item.getVendor(), item.getItemModelNumber()));
+                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getItemModelNumber()));
 
                 if (!brand.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s+%s", item.getBrand(), item.getPartNumber()));
+                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getPartNumber()));
 
                 if (!brand.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s+%s", item.getBrand(), item.getItemModelNumber()));
+                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getItemModelNumber()));
             } catch (Exception ignored) {}
             item.setSearchReq(searchReq);
 

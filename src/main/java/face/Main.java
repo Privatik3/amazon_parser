@@ -33,7 +33,7 @@ public class Main {
         system.addHandler(handler);
         system.setUseParentHandlers(false);
 
-        System.setErr(null);
+//        System.setErr(null);
 
         log.info("Читаем все параметры с пользовательского интерфейса.");
         InterfaceParams parameters = new InterfaceParams();
@@ -49,18 +49,18 @@ public class Main {
 
         // ----------------------------------
         List<Filter> filters = new ArrayList<>();
-        filters.add(new Filter(FilterType.NONE, 50000, 600000, true));
-        filters.add(new Filter(FilterType.UNAVALIABLE, 50000, 600000, true));
-        filters.add(new Filter(FilterType.PRIME, 50000, 600000, true));
+        filters.add(new Filter(FilterType.NONE, 50000, 600000, false));
+        filters.add(new Filter(FilterType.UNAVALIABLE, 50000, 600000, false));
+        filters.add(new Filter(FilterType.PRIME, 50000, 600000, false));
 
         parameters.setFilters(filters);
 
         // ----------------------------------
-        filters.add(new Filter(FilterType.RATING, 3.0, 5.0, true));
+        filters.add(new Filter(FilterType.RATING, 3.0, 5.0, false));
 
         long dateFrom = new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2012").getTime();
         long dateTo = new SimpleDateFormat("MM/dd/yyyy").parse("4/22/2018").getTime();
-        filters.add(new Filter(FilterType.CREATION_DATE, dateFrom, dateTo, true));
+        filters.add(new Filter(FilterType.CREATION_DATE, dateFrom, dateTo, false));
 
 
         log.info("Инициализируем таск, получаем таск ID");

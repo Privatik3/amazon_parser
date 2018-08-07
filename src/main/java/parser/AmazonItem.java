@@ -1,5 +1,6 @@
 package parser;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class AmazonItem {
@@ -21,10 +22,10 @@ public class AmazonItem {
     private Integer bSR;
     private String bSRCategory;
     private Date dateFirstAvailable;
-    private String newHref;
+    private Boolean isNew;
     private HashSet<String> searchReq = new HashSet<>();
-    private List<ItemOffer> priceNew = new ArrayList<>();
-
+    private List<Offer> offers = new ArrayList<>();
+    private List<ItemShortInfo> searchInfo = new ArrayList<>();
 
 
     @Override
@@ -46,21 +47,46 @@ public class AmazonItem {
                 quantity + ';' +
                 bSR + ';' +
                 bSRCategory + ';' +
-                dateFirstAvailable + ';' +
-                newHref + ';';
+                new SimpleDateFormat("yyyy.MM.dd").format(dateFirstAvailable) + ';';
+//                newHref + ';';
 
-        for (ItemOffer req : priceNew)
-            result += req + " | ";
+        result += "OFFERS: ";
+        for (Offer offer : offers) {
+            result += offer + " | ";
+        }
+        result = result.substring(0, result.length() - (offers.size() > 0 ? 3 : 1)) + ";";
 
-        return result.substring(0, result.length() - (priceNew.size() > 0 ? 3 : 1));
+        result += "SHORT_INFO: ";
+        for (ItemShortInfo info : searchInfo) {
+            result += info + " | ";
+        }
+        result = result.substring(0, result.length() - (searchInfo.size() > 0 ? 3 : 1)) + ";";
+
+        return result.substring(0, result.length() -  1);
     }
 
-    public List<ItemOffer> getPriceNew() {
-        return priceNew;
+    public Boolean getNew() {
+        return isNew;
     }
 
-    public void setPriceNew(List<ItemOffer> priceNew) {
-        this.priceNew = priceNew;
+    public void setNew(Boolean aNew) {
+        isNew = aNew;
+    }
+
+    public List<ItemShortInfo> getSearchInfo() {
+        return searchInfo;
+    }
+
+    public void setSearchInfo(List<ItemShortInfo> searchInfo) {
+        this.searchInfo = searchInfo;
+    }
+
+    public List<Offer> getOffers() {
+        return offers;
+    }
+
+    public void setOffers(List<Offer> offers) {
+        this.offers = offers;
     }
 
     public HashSet<String> getSearchReq() {
@@ -69,14 +95,6 @@ public class AmazonItem {
 
     public void setSearchReq(HashSet<String> searchReq) {
         this.searchReq = searchReq;
-    }
-
-    public String getNewHref() {
-        return newHref;
-    }
-
-    public void setNewHref(String newHref) {
-        this.newHref = newHref;
     }
 
     public Boolean getPromoOffer() {

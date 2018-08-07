@@ -4,9 +4,12 @@ import db.DBHandler;
 import excel.Handler;
 import face.Filter;
 import face.InterfaceParams;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import parser.*;
 import utility.RequestManager;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
@@ -33,11 +36,21 @@ public class Task extends Thread {
             long time = new Date().getTime();
 
             List<RequestTask> reqTasks = new ArrayList<>();
-            if (!params.getUrlListing().isEmpty())
-                reqTasks.addAll(queryCategory());
+            if (!params.getUrlListing().isEmpty()) {
+                log.info("-------------------------------------------------");
+                log.info("Формируем список ссылок на страницы каталога");
+                reqTasks = initCatalogReq(params.getUrlListing());
+                RequestManager.execute(reqTasks);
+                reqTasks.clear();
+
+                log.info("-------------------------------------------------");
+                log.info("Обрабатываем асины, полеченные по ссылке пользователя");
+                reqTasks.addAll(convertToTasks(Amazon.parseCategory(DBHandler.selectAllPages())));
+            }
 
             if (!params.getPathToListing().isEmpty())
                 reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing())));
+
 
             log.info("Выполняем запрос на выкачку листинга");
             RequestManager.execute(reqTasks);
@@ -170,6 +183,38 @@ public class Task extends Thread {
             e.printStackTrace();
         }
 
+    }
+
+    private List<RequestTask> initCatalogReq(String url) {
+
+        List<RequestTask> tasks = new ArrayList<>();
+
+        int maxPages = 1;
+        try {
+
+            Document doc = Jsoup.connect(url).get();
+            String pages = doc.select("div#pagn").text();
+
+            if (pages.length() > 0) {
+                pages = pages.substring(0, pages.lastIndexOf("Next")).trim();
+                String[] allPages = pages.split(" ");
+                maxPages = Integer.parseInt(allPages[allPages.length - 1]);
+            }
+        } catch (IOException e) {
+            log.info("-------------------------------------------------");
+            log.log(Level.SEVERE, "Не удалось загрузить сраницы");
+            log.log(Level.SEVERE, "Exception: ", e);
+        }
+
+        for (int i = 1; i <= (maxPages > 10 ? 10 : maxPages); i++) {
+            RequestTask task = new RequestTask(String.valueOf(i));
+            task.setUrl( url + "&page=" + i);
+            task.setType(ReqTaskType.CATEGORY);
+
+            tasks.add(task);
+        }
+
+        return tasks;
     }
 
     private void addInfo(ArrayList<ItemShortInfo> searchInfo, String asin, Optional<AmazonItem> first) {

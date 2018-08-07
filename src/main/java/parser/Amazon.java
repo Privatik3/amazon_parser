@@ -428,5 +428,30 @@ public class Amazon {
         return result;
     }
 
+    public static HashSet<String> parseCategory(List<RequestTask> tasks) {
 
+        log.info("-------------------------------------------------");
+        log.info("Начинаем сбор ASINS по страницам категории");
+
+        long start = new Date().getTime();
+
+        HashSet<String> result = new HashSet<>();
+        for (RequestTask task : tasks) {
+            Document doc = Jsoup.parse(task.getHtml());
+
+            try {
+                String asin = "";
+                // TODO Здесь тебе нужно использовать doc и получить все асины
+                // Найди селектор, с помощью которого можно получить все asin со странички
+                // В цыкле перебери все и добавь их в result, как на примере ниже
+                // Вот пример страницы: https://www.amazon.com/s?marketplaceID=ATVPDKIKX0DER&me=A1RDYXN1JW1DJR
+
+                result.add(asin);
+            } catch (Exception ignored) {}
+        }
+
+        log.info("Время затраченое на сбор: " + (new Date().getTime() - start) + " ms");
+
+        return result;
+    }
 }

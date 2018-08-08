@@ -150,7 +150,7 @@ public class Task extends Thread {
                     asins.add(item.getAsin());
 
                 for (ItemShortInfo info : item.getSearchInfo())
-                    if (item.getAvailability() && item.getNew())
+                    if (info.getAvailability() && info.getIsNew())
                         asins.add(info.getAsin());
             }
 

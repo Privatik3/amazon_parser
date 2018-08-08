@@ -90,6 +90,7 @@ public class RequestManager {
         Integer parseSpeed = 0;
         Integer wave = 0;
         Integer resultStatus = 0;
+        Integer failCount = 0;
 
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
@@ -167,11 +168,13 @@ public class RequestManager {
             cdl.await(12, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0) {
+            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 3 ) {
                 for (RequestTask task : taskMultiply)
                     Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 
                 throw new Exception("За круг было получено 0 результатов");
+            } else {
+                failCount = 0;
             }
 
             if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {

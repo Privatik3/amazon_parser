@@ -30,306 +30,340 @@ public class Amazon {
             Document doc = Jsoup.parse(task.getHtml());
             // Здесь гавнарит Александр
 
-            Boolean availability = false;
-            try {
-                Elements inStockStatus = doc.select("div#availability");
-                availability = inStockStatus.size() > 0 && !inStockStatus.text().contains("unavailable");
-            } catch (Exception ignored) {
-            }
-            item.setAvailability(availability);
+            if (!(doc.select("#dropdown_selected_size_name")).text().contains("Select")) {
 
-            Boolean promo = false;
-            try {
-                Elements promoStatus = doc.select("div#pe-bb-header");
-                promo = promoStatus.size() > 0 && promoStatus.text().contains("Prime");
-            } catch (Exception ignored) {
-            }
-            item.setPromoOffer(promo);
-
-            String vendor = "";
-            try {
-                vendor = doc.select("a#bylineInfo").text();
-            } catch (Exception ignored) {
-            }
-            item.setVendor(vendor.trim());
-
-            String name = "";
-            try {
-                name = doc.select("span#productTitle").text();
-            } catch (Exception ignored) {
-            }
-            item.setProductName(name);
-
-            String sellerName = "";
-            try {
-                sellerName = doc.select("#merchant-info a").get(0).text();
-            } catch (Exception ignored) {
-            }
-            item.setBuyBoxSeller(sellerName);
-
-            Double price = 0.00;
-            try {
-                String priceOne = doc.select("#newBuyBoxPrice").text();
-                if (priceOne.length() > 2) {
-                    priceOne = priceOne.substring(1);
-                    priceOne = priceOne.split(" ")[0];
-                    price = Double.parseDouble(priceOne);
+                Boolean availability = false;
+                try {
+                    Elements inStockStatus = doc.select("div#availability");
+                    availability = !inStockStatus.text().contains("unavailable");
+                } catch (Exception ignored) {
                 }
-                if (priceOne.length() < 1) {
-                    priceOne = doc.select("#price_inside_buybox").text();
-                    priceOne = priceOne.substring(1);
-                    priceOne = priceOne.split(" ")[0];
-                    price = Double.parseDouble(priceOne);
-                }
-            } catch (Exception ignored) {
-            }
-            item.setBuyBoxPrice(price);
+                item.setAvailability(availability);
 
-            String Shipping = "";
-            try {
-                Shipping = doc.select("#price-shipping-message").text();
-                if (Shipping.length() > 1) {
-                    Shipping = Shipping.split("&")[1];
-                    Shipping = Shipping.split("&")[0];
-                    Shipping = Shipping.split(".D")[0];
+                Boolean promo = false;
+                try {
+                    Elements promoStatus = doc.select("div#pe-bb-header");
+                    promo = promoStatus.size() > 0 && promoStatus.text().contains("Prime");
+                } catch (Exception ignored) {
                 }
-                if (Shipping.length() < 1) {
-                    Shipping = doc.select("#shippingMessageInsideBuyBox_feature_div").text();
-                    Shipping = Shipping.substring(Shipping.indexOf("+") + 1);
+                item.setPromoOffer(promo);
+
+                String vendor = "";
+                try {
+                    vendor = doc.select("a#bylineInfo").text();
+                } catch (Exception ignored) {
                 }
-                if (Shipping.length() < 1) {
+                item.setVendor(vendor.trim());
+
+                String name = "";
+                try {
+                    name = doc.select("span#productTitle").text();
+                } catch (Exception ignored) {
+                }
+                item.setProductName(name);
+
+                String sellerName = "";
+                try {
+                    sellerName = doc.select("#merchant-info a").get(0).text();
+                } catch (Exception ignored) {
+                }
+                item.setBuyBoxSeller(sellerName);
+
+                Double price = 0.00;
+                try {
+                    String priceOne = doc.select("#newBuyBoxPrice").text();
+                    if (priceOne.length() > 2) {
+                        priceOne = priceOne.substring(1);
+                        priceOne = priceOne.split(" ")[0];
+                        price = Double.parseDouble(priceOne);
+                    }
+                    if (priceOne.length() < 1) {
+                        priceOne = doc.select("#price_inside_buybox").text();
+                        priceOne = priceOne.substring(1);
+                        priceOne = priceOne.split(" ")[0];
+                        price = Double.parseDouble(priceOne);
+                    }
+                    if (priceOne.length() < 1) {
+                        priceOne = doc.select("#snsPrice span").get(4).text();
+                        if (priceOne.contains("Save")) {
+                            priceOne = doc.select("#snsPrice span").get(3).text();
+                            price = Double.parseDouble(priceOne);
+                        } else {
+                            priceOne = "";
+                        }
+                    }
+                    if (priceOne.length() < 1) {
+                        priceOne = doc.select("span#_price").get(0).text();
+                        priceOne = priceOne.substring(1);
+                        priceOne = priceOne.split(" ")[0];
+                        price = Double.parseDouble(priceOne);
+                    }
+                } catch (Exception ignored) {
+                }
+                item.setBuyBoxPrice(price);
+
+                String Shipping = "";
+                try {
                     Shipping = doc.select("#price-shipping-message").text();
-                }
-            } catch (Exception ignored) {
-            }
-            item.setBuyBoxShipping(Shipping);
-
-
-            //TODO Заменить 5 на значение пользователя
-            String shipingConverter = item.getBuyBoxShipping();
-            try {
-                if (shipingConverter.contains("over")) {
-                    item.setPriceShipping(price + 5);
-                    shipingConverter = "Этот текст здесь нужен";
-                }
-                if (shipingConverter.contains("FREE")) {
-                    item.setPriceShipping(price);
-                }
-                if (shipingConverter.contains("$")) {
-                    shipingConverter = shipingConverter.substring(2).split(" ")[0];
-                    item.setPriceShipping(price + Double.parseDouble(shipingConverter));
-                }
-                if (shipingConverter.length() < 1) {
-                    item.setPriceShipping(price);
-                }
-            } catch (Exception ignored) {
-            }
-
-            String brand = "";
-            try {
-                Elements brandEl = doc.select("#product-specification-table tr");
-                for (Element el : brandEl) {
-                    if (el.text().contains("Brand")) {
-                        brand = el.select("td").text();
+                    if (Shipping.length() > 1) {
+                        Shipping = Shipping.split("&")[1];
+                        Shipping = Shipping.split("&")[0];
+                        Shipping = Shipping.split(".D")[0];
                     }
-                }
-            } catch (Exception ignored) {
-            }
-            item.setBrand(brand.trim());
-
-            String partNumber = "";
-            try {
-                Elements partNumberEl = doc.select("th");
-                for (Element el : partNumberEl) {
-                    if (el.text().contains("Part Number")) {
-                        partNumber = el.parent().select("td").text();
+                    if (Shipping.length() < 1) {
+                        Shipping = doc.select("#shippingMessageInsideBuyBox_feature_div").text();
+                        if (Shipping.contains("+")) {
+                            Shipping = Shipping.substring(Shipping.indexOf("+") + 1);
+                        }
                     }
-                }
-            } catch (Exception ignored) {
-            }
-            item.setPartNumber(partNumber.trim());
-
-            String itemModelNumber = "";
-            try {
-                Elements itemModelNumberEl = doc.select("th");
-                for (Element el : itemModelNumberEl) {
-                    if (el.text().contains("Item model number")) {
-                        itemModelNumber = el.parent().select("td").text();
+                    if (Shipping.length() < 1) {
+                        Shipping = doc.select("#price-shipping-message").text();
                     }
+                } catch (Exception ignored) {
                 }
-                if (itemModelNumber.length() < 1) {
-                    itemModelNumberEl = doc.select("li");
+                item.setBuyBoxShipping(Shipping);
+
+
+                //TODO Заменить 5 на значение пользователя
+                String shipingConverter = item.getBuyBoxShipping();
+                try {
+                    if (shipingConverter.contains("over")) {
+                        item.setPriceShipping(price + 5);
+                        shipingConverter = "Этот текст здесь нужен";
+                    }
+                    if (shipingConverter.contains("FREE")) {
+                        item.setPriceShipping(price);
+                    }
+                    if (shipingConverter.contains("$")) {
+                        shipingConverter = shipingConverter.substring(2).split(" ")[0];
+                        item.setPriceShipping(price + Double.parseDouble(shipingConverter));
+                    }
+                    if (shipingConverter.length() < 1) {
+                        item.setPriceShipping(price);
+                    }
+                } catch (Exception ignored) {
+                }
+
+                String brand = "";
+                try {
+                    Elements brandEl = doc.select("#product-specification-table tr");
+                    for (Element el : brandEl) {
+                        if (el.text().contains("Brand")) {
+                            brand = el.select("td").text();
+                        }
+                    }
+                    if (brand.length() < 1) {
+                        brand = doc.select("#productDescription").text();
+                        if (brand.contains("Brand Story")) {
+                            brand = brand.split("Brand Story")[1];
+                        } else {
+                            brand = "";
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                item.setBrand(brand.trim());
+
+
+                String partNumber = "";
+                try {
+                    Elements partNumberEl = doc.select("th");
+                    for (Element el : partNumberEl) {
+                        if (el.text().contains("Part Number")) {
+                            partNumber = el.parent().select("td").text();
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                item.setPartNumber(partNumber.trim());
+
+                String itemModelNumber = "";
+                try {
+                    Elements itemModelNumberEl = doc.select("th");
                     for (Element el : itemModelNumberEl) {
                         if (el.text().contains("Item model number")) {
-                            itemModelNumber = el.text();
-                            itemModelNumber = itemModelNumber.split(":")[1];
+                            itemModelNumber = el.parent().select("td").text();
                         }
                     }
-                }
-            } catch (Exception ignored) {
-            }
-            item.setItemModelNumber(itemModelNumber.trim());
-
-
-            String asinDomin = "";
-            try {
-                Elements asinDominEl = doc.select("th");
-                for (Element el : asinDominEl) {
-                    if (el.text().contains("ASIN")) {
-                        asinDomin = el.parent().select("td").text();
+                    if (itemModelNumber.length() < 1) {
+                        itemModelNumberEl = doc.select("li");
+                        for (Element el : itemModelNumberEl) {
+                            if (el.text().contains("Item model number")) {
+                                itemModelNumber = el.text();
+                                itemModelNumber = itemModelNumber.split(":")[1];
+                            }
+                        }
                     }
+                } catch (Exception ignored) {
                 }
-                if (asinDomin.length() < 1) {
-                    asinDominEl = doc.select("li");
+                item.setItemModelNumber(itemModelNumber.trim());
+
+
+                String asinDomin = "";
+                try {
+                    Elements asinDominEl = doc.select("th");
                     for (Element el : asinDominEl) {
                         if (el.text().contains("ASIN")) {
-                            asinDomin = el.text();
-                            asinDomin = asinDomin.split(":")[1];
+                            asinDomin = el.parent().select("td").text();
                         }
                     }
-                }
-                if (asinDomin.length() < 1) {
-                    asinDominEl = doc.select("td");
-                    for (Element el : asinDominEl) {
-                        if (el.text().contains("ASIN")) {
-                            asinDomin = el.parent().select("td.value").text();
+                    if (asinDomin.length() < 1) {
+                        asinDominEl = doc.select("li");
+                        for (Element el : asinDominEl) {
+                            if (el.text().contains("ASIN")) {
+                                asinDomin = el.text();
+                                asinDomin = asinDomin.split(":")[1];
+                            }
                         }
                     }
-                }
-            } catch (Exception ignored) {
-            }
-            item.setAsinDomin(asinDomin.trim());
-
-            String textRating = "";
-            Double rating = -1.0;
-            try {
-                Elements select = doc.select("#acrPopover span");
-                if (select.size() > 1) {
-                    textRating = select.get(1).text();
-                    textRating = textRating.substring(0, 3);
-                }
-                textRating = getRating(doc, textRating, "#productDetails_db_sections tr td");
-                textRating = getRating(doc, textRating, "#productDetails_detailBullets_sections1 td");
-                if (textRating.length() < 1) {
-                    select = doc.select("td");
-                    for (Element el : select) {
-                        if (el.text().contains("Customer Reviews")) {
-                            textRating = el.parent().select("td.value span").text();
-                            textRating = textRating.split(" out")[0];
+                    if (asinDomin.length() < 1) {
+                        asinDominEl = doc.select("td");
+                        for (Element el : asinDominEl) {
+                            if (el.text().contains("ASIN")) {
+                                asinDomin = el.parent().select("td.value").text();
+                            }
                         }
                     }
+                } catch (Exception ignored) {
                 }
-                rating = Double.parseDouble(textRating);
-            } catch (Exception ignored) {
-            }
-            item.setRating(rating);
+                item.setAsinDomin(asinDomin.trim());
 
-
-            String quantity = "0";
-            try {
-                quantity = doc.select("#acrCustomerReviewText").text();
-                if (!quantity.equals("")) {
-                    quantity = quantity.split(" customer")[0];
-                }
-                if (quantity.equals("")) {
-                    quantity = "0";
-                }
-            } catch (Exception ignored) {
-            }
-            item.setQuantity(quantity);
-
-            String bSRDouble = "";
-            Integer bSR = 0;
-            try {
-                Elements bSREl = doc.select("th");
-                for (Element el : bSREl) {
-                    if (el.text().contains("Best Sellers Rank")) {
-                        bSRDouble = el.parent().select("td").text();
-                        bSRDouble = bSRDouble.split(" in")[0];
-                        bSRDouble = bSRDouble.split("#")[1];
-                        bSRDouble = bSRDouble.replace(",", "");
+                String textRating = "";
+                Double rating = -1.0;
+                try {
+                    Elements select = doc.select("#acrPopover span");
+                    if (select.size() > 1) {
+                        textRating = select.get(1).text();
+                        textRating = textRating.substring(0, 3);
                     }
-                }
-                if (bSRDouble.length() < 1) {
-                    bSRDouble = getBSR(doc, "#SalesRank");
-                }
-                bSR = Integer.parseInt(bSRDouble);
-            } catch (Exception ignored) {
-            }
-            item.setbSR(bSR);
-
-            String bSRCategory = "";
-            try {
-                Elements bSRCategoryEl = doc.select("th");
-
-                for (Element el : bSRCategoryEl) {
-                    if (el.text().contains("Best Sellers Rank")) {
-                        bSRCategory = el.parent().select("td").text();
-                        bSRCategory = bSRCategory.split("in ")[1];
-                        bSRCategory = bSRCategory.split("\\(S")[0];
+                    textRating = getRating(doc, textRating, "#productDetails_db_sections tr td");
+                    textRating = getRating(doc, textRating, "#productDetails_detailBullets_sections1 td");
+                    if (textRating.length() < 1) {
+                        select = doc.select("td");
+                        for (Element el : select) {
+                            if (el.text().contains("Customer Reviews")) {
+                                textRating = el.parent().select("td.value span").text();
+                                textRating = textRating.split(" out")[0];
+                            }
+                        }
                     }
+                    rating = Double.parseDouble(textRating);
+                } catch (Exception ignored) {
                 }
-                if (bSRCategory.length() < 1) {
-                    bSRCategory = getbSRCategory(doc, "#SalesRank");
-                }
-                bSRCategory = bSRCategory.split(">")[0];
-            } catch (Exception ignored) {
-            }
-            item.setbSRCategory(bSRCategory);
+                item.setRating(rating);
 
-            Date dateCreation = new Date();
-            try {
-                String dateFirstAvailable = "";
-                Elements dateFirstAvailableEl = doc.select("th");
-                for (Element el : dateFirstAvailableEl) {
-                    if (el.text().contains("Date first") || el.text().contains("Date First")) {
-                        dateFirstAvailable = el.parent().select("td").text();
-                        break;
+
+                String quantity = "0";
+                try {
+                    quantity = doc.select("#acrCustomerReviewText").text();
+                    if (!quantity.equals("")) {
+                        quantity = quantity.split(" customer")[0];
                     }
+                    if (quantity.equals("")) {
+                        quantity = "0";
+                    }
+                } catch (Exception ignored) {
                 }
-                String[] split = dateFirstAvailable.split(" ");
-                String monthData = split[0];
-                String day = dateFirstAvailable.split(" ")[1];
-                day = day.replace(",", "");
-                String year = dateFirstAvailable.split(" ")[2];
-                int month = new SimpleDateFormat("MMMM", Locale.US).parse(monthData).getMonth() + 1;
-                dateFirstAvailable = month + "/" + day + "/" + year;
-                dateCreation = new SimpleDateFormat("MM/dd/yyyy").parse(dateFirstAvailable);
-            } catch (Exception ignored) {
-            }
-            item.setDateFirstAvailable(dateCreation);
+                item.setQuantity(quantity);
 
-            Boolean offerStatus = false;
-            try {
-                String newHref = doc.select("#olp_feature_div").text();
-                if (newHref.contains("new")) {
-                    offerStatus = true;
+                String bSRDouble = "";
+                Integer bSR = 0;
+                try {
+                    Elements bSREl = doc.select("th");
+                    for (Element el : bSREl) {
+                        if (el.text().contains("Best Sellers Rank")) {
+                            bSRDouble = el.parent().select("td").text();
+                            bSRDouble = bSRDouble.split(" in")[0];
+                            bSRDouble = bSRDouble.split("#")[1];
+                            bSRDouble = bSRDouble.replace(",", "");
+                        }
+                    }
+                    if (bSRDouble.length() < 1) {
+                        bSRDouble = getBSR(doc, "#SalesRank");
+                    }
+                    bSR = Integer.parseInt(bSRDouble);
+                } catch (Exception ignored) {
                 }
-            } catch (Exception ignored) {
+                item.setbSR(bSR);
+
+                String bSRCategory = "";
+                try {
+                    Elements bSRCategoryEl = doc.select("th");
+
+                    for (Element el : bSRCategoryEl) {
+                        if (el.text().contains("Best Sellers Rank")) {
+                            bSRCategory = el.parent().select("td").text();
+                            bSRCategory = bSRCategory.split("in ")[1];
+                            bSRCategory = bSRCategory.split("\\(S")[0];
+                        }
+                    }
+                    if (bSRCategory.length() < 1) {
+                        bSRCategory = getbSRCategory(doc, "#SalesRank");
+                    }
+                    bSRCategory = bSRCategory.split(">")[0];
+                } catch (Exception ignored) {
+                }
+                item.setbSRCategory(bSRCategory);
+
+                Date dateCreation = new Date();
+                try {
+                    String dateFirstAvailable = "";
+                    Elements dateFirstAvailableEl = doc.select("th");
+                    for (Element el : dateFirstAvailableEl) {
+                        if (el.text().contains("Date first") || el.text().contains("Date First")) {
+                            dateFirstAvailable = el.parent().select("td").text();
+                            break;
+                        }
+                    }
+                    String[] split = dateFirstAvailable.split(" ");
+                    String monthData = split[0];
+                    String day = dateFirstAvailable.split(" ")[1];
+                    day = day.replace(",", "");
+                    String year = dateFirstAvailable.split(" ")[2];
+                    int month = new SimpleDateFormat("MMMM", Locale.US).parse(monthData).getMonth() + 1;
+                    dateFirstAvailable = month + "/" + day + "/" + year;
+                    dateCreation = new SimpleDateFormat("MM/dd/yyyy").parse(dateFirstAvailable);
+                } catch (Exception ignored) {
+                }
+                item.setDateFirstAvailable(dateCreation);
+
+                Boolean offerStatus = false;
+                try {
+                    String newHref = doc.select("#olp_feature_div").text();
+                    if (newHref.contains("new")) {
+                        offerStatus = true;
+                    }
+                    if (!offerStatus) {
+                        newHref = doc.select("#moreBuyingChoices_feature_div").text();
+                        if (newHref.contains("new")) {
+                            offerStatus = true;
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                item.setNew(offerStatus);
+
+                HashSet<String> searchReq = new HashSet<>();
+                try {
+                    if (!vendor.isEmpty() && !partNumber.isEmpty())
+                        searchReq.add(String.format("%s + %s", item.getVendor(), item.getPartNumber()));
+
+                    if (!vendor.isEmpty() && !itemModelNumber.isEmpty())
+                        searchReq.add(String.format("%s + %s", item.getVendor(), item.getItemModelNumber()));
+
+                    if (!brand.isEmpty() && !partNumber.isEmpty())
+                        searchReq.add(String.format("%s + %s", item.getBrand(), item.getPartNumber()));
+
+                    if (!brand.isEmpty() && !itemModelNumber.isEmpty())
+                        searchReq.add(String.format("%s + %s", item.getBrand(), item.getItemModelNumber()));
+                } catch (Exception ignored) {
+                }
+                item.setSearchReq(searchReq);
+
+                // Здесь уже норм код
+                result.add(item);
             }
-            item.setNew(offerStatus);
-
-            HashSet<String> searchReq = new HashSet<>();
-            try {
-                if (!vendor.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getPartNumber()));
-
-                if (!vendor.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getVendor(), item.getItemModelNumber()));
-
-                if (!brand.isEmpty() && !partNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getPartNumber()));
-
-                if (!brand.isEmpty() && !itemModelNumber.isEmpty())
-                    searchReq.add(String.format("%s + %s", item.getBrand(), item.getItemModelNumber()));
-            } catch (Exception ignored) {
-            }
-            item.setSearchReq(searchReq);
-
-            // Здесь уже норм код
-            result.add(item);
         }
-
         log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
         return result;
     }

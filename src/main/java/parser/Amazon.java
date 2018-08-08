@@ -79,24 +79,47 @@ public class Amazon {
                     }
                     if (priceOne.length() < 1) {
                         priceOne = doc.select("#price_inside_buybox").text();
-                        priceOne = priceOne.substring(1);
-                        priceOne = priceOne.split(" ")[0];
-                        price = Double.parseDouble(priceOne);
-                    }
-                    if (priceOne.length() < 1) {
-                        priceOne = doc.select("#snsPrice span").get(4).text();
-                        if (priceOne.contains("Save")) {
-                            priceOne = doc.select("#snsPrice span").get(3).text();
+                        if (priceOne.length() > 2) {
+                            priceOne = priceOne.substring(1);
+                            priceOne = priceOne.split(" ")[0];
                             price = Double.parseDouble(priceOne);
-                        } else {
-                            priceOne = "";
                         }
                     }
                     if (priceOne.length() < 1) {
-                        priceOne = doc.select("span#_price").get(0).text();
-                        priceOne = priceOne.substring(1);
-                        priceOne = priceOne.split(" ")[0];
-                        price = Double.parseDouble(priceOne);
+                            priceOne = doc.select("#snsPrice span.a-text-strike").text();
+                        if (priceOne.length() > 2) {
+                            priceOne = priceOne.substring(1);
+                            priceOne = priceOne.split(" ")[0];
+                            price = Double.parseDouble(priceOne);
+                        }
+                    }
+                    if (priceOne.length() < 1) {
+                        if (doc.select("span#_price").size() > 0) {
+                            priceOne = doc.select("span#_price").get(0).text();
+                            if (priceOne.length() > 2) {
+                                priceOne = priceOne.substring(1);
+                                priceOne = priceOne.split(" ")[0];
+                                price = Double.parseDouble(priceOne);
+                            }
+                        }
+                    }
+                    if (priceOne.length() < 1) {
+                        priceOne = doc.select("#priceblock_ourprice").text();
+                        if (priceOne.length() > 2) {
+                            priceOne = priceOne.substring(1);
+                            priceOne = priceOne.split(" ")[0];
+                            price = Double.parseDouble(priceOne);
+                        }
+                    }
+                    if (priceOne.length() < 1) {
+                        if (doc.select("#snsBuyBoxAccordion span.a-color-price").size() > 0) {
+                            priceOne = doc.select("#snsBuyBoxAccordion span.a-color-price").get(0).text();
+                            if (priceOne.length() > 2) {
+                                priceOne = priceOne.substring(1);
+                                priceOne = priceOne.split(" ")[0];
+                                price = Double.parseDouble(priceOne);
+                            }
+                        }
                     }
                 } catch (Exception ignored) {
                 }
@@ -252,7 +275,6 @@ public class Amazon {
                 }
                 item.setRating(rating);
 
-
                 String quantity = "0";
                 try {
                     quantity = doc.select("#acrCustomerReviewText").text();
@@ -327,16 +349,29 @@ public class Amazon {
                 }
                 item.setDateFirstAvailable(dateCreation);
 
+                // TODO Проверить что бы ссылка на оферы содержала в себе ASIN товара
                 Boolean offerStatus = false;
                 try {
                     String newHref = doc.select("#olp_feature_div").text();
-                    if (newHref.contains("new")) {
-                        offerStatus = true;
+                    if (newHref.toLowerCase().contains("new")) {
+                        if (doc.select("#olp_feature_div a").attr("href").contains(item.getAsin())) {
+                            offerStatus = true;
+                        }
                     }
                     if (!offerStatus) {
                         newHref = doc.select("#moreBuyingChoices_feature_div").text();
-                        if (newHref.contains("new")) {
-                            offerStatus = true;
+                        if (newHref.toLowerCase().contains("new")) {
+                            if (doc.select("#moreBuyingChoices_feature_div a").attr("href").contains(item.getAsin())) {
+                                offerStatus = true;
+                            }
+                        }
+                    }
+                    if (!offerStatus) {
+                        newHref = doc.select("#toggleBuyBox").text();
+                        if (newHref.toLowerCase().contains("new")) {
+                            if (doc.select("#toggleBuyBox a").attr("href").contains(item.getAsin())) {
+                                offerStatus = true;
+                            }
                         }
                     }
                 } catch (Exception ignored) {
@@ -356,8 +391,10 @@ public class Amazon {
 
                     if (!brand.isEmpty() && !itemModelNumber.isEmpty())
                         searchReq.add(String.format("%s + %s", item.getBrand(), item.getItemModelNumber()));
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
+                if (!item.getPromoOffer() && (item.getPartNumber().isEmpty() || item.getItemModelNumber().isEmpty()))
+                    continue;
+
                 item.setSearchReq(searchReq);
 
                 // Здесь уже норм код

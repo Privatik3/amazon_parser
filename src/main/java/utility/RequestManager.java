@@ -172,9 +172,10 @@ public class RequestManager {
                 for (RequestTask task : taskMultiply)
                     Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 
-                throw new Exception("За круг было получено 0 результатов");
-            } else {
-                failCount = 0;
+                if (taskMultiply.size() > 10)
+                    throw new Exception("За круг было получено 0 результатов");
+                else
+                    taskMultiply.clear();
             }
 
             if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {

@@ -28,6 +28,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -73,7 +74,7 @@ public class RequestManager {
         if (client == null)
             initClient();
 
-        ArrayList<Thread> dbThreads = new ArrayList<>();
+//        ArrayList<Thread> dbThreads = new ArrayList<>();
         HashSet<RequestTask> result = new HashSet<>();
 
         ArrayList<RequestConfig> allProxy = ProxyManager.getProxy();
@@ -81,16 +82,18 @@ public class RequestManager {
 
         final long startTime = new Date().getTime();
         final int initTaskSize = tasks.size();
-        final int bufferSize = tasks.size() < 50 ? tasks.size() : 50;
+        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
 
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
         Integer waveCount = 0;
         Integer parseSpeed = 0;
         Integer wave = 0;
+        Integer resultStatus = 0;
 
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
+            resultStatus = result.size();
             log.info("-------------------------------------------------");
             log.info("Инициализирую новую волну, осталось: " + taskMultiply.size() + " тасков");
 
@@ -161,41 +164,35 @@ public class RequestManager {
 
             }
 
-            cdl.await(10, TimeUnit.SECONDS);
-
-            // Ожидаем завершения кэширования, не привышаем определённое количество потоков
-            int cacheCount = dbThreads.stream().filter(Thread::isAlive).collect(Collectors.toList()).size();
-            if (cacheCount > 0)
-                for (Thread thread : dbThreads)
-                    thread.join();
-
-            if (result.size() == 0 && tasks.size() != 0)
-                throw new Exception("За круг было получено 0 результатов");
+            cdl.await(12, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {
-                ArrayList<RequestTask> items = new ArrayList<>(result);
+            if (resultStatus == result.size() && taskMultiply.size() != 0) {
+                for (RequestTask task : taskMultiply)
+                    Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 
-                Thread dbThread = null;
+                throw new Exception("За круг было получено 0 результатов");
+            }
+
+            if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {
+
+                ArrayList<RequestTask> items = new ArrayList<>(result);
+                result.clear();
 
                 switch (items.get(0).getType()) {
                     case ITEM:
-                        dbThread = new Thread(() -> DBHandler.addAmazonItems(items));
+                        DBHandler.addAmazonItems(items);
                         break;
                     case SEARCH:
-                        dbThread = new Thread(() -> DBHandler.addAmazonSearch(items));
+                        DBHandler.addAmazonSearch(items);
                         break;
                     case OFFER:
-                        dbThread = new Thread(() -> DBHandler.addAmazonOffers(items));
+                        DBHandler.addAmazonOffers(items);
                         break;
                     case CATEGORY:
-                        dbThread = new Thread(() -> DBHandler.addAmazonPages(items));
+                        DBHandler.addAmazonPages(items);
                         break;
                 }
-
-                dbThread.setDaemon(true);
-                dbThread.start();
-                dbThreads.add(dbThread);
 
                 result.clear();
             }
@@ -209,11 +206,7 @@ public class RequestManager {
 
         log.info("-------------------------------------------------");
         log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
-        log.info("Ждём завершение кэширования данных ...");
-
-        for (Thread thread : dbThreads)
-            thread.join();
-
+//        log.info("Ждём завершение кэширования данных ...");
 
         // Кэшируем результаты для тест мода
         /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);

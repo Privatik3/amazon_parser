@@ -11,11 +11,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DBHandler {
 
 //    private static HtmlCompressor compressor = new HtmlCompressor();
     private static Whitelist whitelist = new Whitelist();
+    private static Logger log = Logger.getLogger(DBHandler.class.getName());
     private static Connection conn;
 
     static {
@@ -72,8 +75,10 @@ public class DBHandler {
 
             insertStatement.executeBatch();
         } catch (Exception e) {
-//            System.setErr(err);
-            e.printStackTrace();
+//            log.info("-------------------------------------------------");
+//            log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
+//            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+//            e.printStackTrace();
 //            System.setErr(null);
         } finally {
             items.clear();
@@ -108,7 +113,10 @@ public class DBHandler {
 
             insertStatement.executeBatch();
         } catch (Exception e) {
-            e.printStackTrace();
+//            log.info("-------------------------------------------------");
+//            log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
+//            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+//            e.printStackTrace();
         } finally {
             items.clear();
             items = null;
@@ -142,7 +150,10 @@ public class DBHandler {
 
             insertStatement.executeBatch();
         } catch (Exception e) {
-            e.printStackTrace();
+//            log.info("-------------------------------------------------");
+//            log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
+//            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+//            e.printStackTrace();
         } finally {
             items.clear();
             items = null;
@@ -176,7 +187,10 @@ public class DBHandler {
 
             insertStatement.executeBatch();
         } catch (Exception e) {
-            e.printStackTrace();
+//            log.info("-------------------------------------------------");
+//            log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
+//            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+//            e.printStackTrace();
         } finally {
             items.clear();
             items = null;

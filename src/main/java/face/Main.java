@@ -33,7 +33,7 @@ public class Main {
         system.addHandler(handler);
         system.setUseParentHandlers(false);
 
-        System.setErr(null);
+//        System.setErr(null);
 
         log.info("Читаем все параметры с пользовательского интерфейса.");
         InterfaceParams parameters = new InterfaceParams();

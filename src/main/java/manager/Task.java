@@ -10,6 +10,7 @@ import parser.*;
 import utility.RequestManager;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class Task extends Thread {
 
     private static Logger log = Logger.getLogger(Task.class.getName());
+    private static PrintStream err;
 
     private Integer status = 0;
     private InterfaceParams params;
@@ -30,6 +32,9 @@ public class Task extends Thread {
     public Task(InterfaceParams parameters) {
         this.params = parameters;
         this.setDaemon(true);
+
+        err = System.err;
+        System.setErr(null);
     }
 
     @Override
@@ -187,6 +192,8 @@ public class Task extends Thread {
             log.info("-------------------------------------------------");
             log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
+
+            System.setErr(err);
             e.printStackTrace();
         }
 

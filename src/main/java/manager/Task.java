@@ -11,6 +11,9 @@ import utility.RequestManager;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,6 +38,9 @@ public class Task extends Thread {
         try {
             long time = new Date().getTime();
 
+            log.info("Инициализируем очистку всех кэшей");
+            DBHandler.clearAll();
+
             List<RequestTask> reqTasks = new ArrayList<>();
             if (!params.getUrlListing().isEmpty()) {
                 log.info("-------------------------------------------------");
@@ -51,11 +57,12 @@ public class Task extends Thread {
             if (!params.getPathToListing().isEmpty())
                 reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing())));
 
+            if (reqTasks.size() == 0)
+                throw new Exception("Не было получено ни одного ASIN для обработки");
 
             log.info("Выполняем запрос на выкачку листинга");
             RequestManager.execute(reqTasks);
             reqTasks.clear();
-
 
             result = Amazon.parseItems(DBHandler.selectAllItems());
 
@@ -179,7 +186,7 @@ public class Task extends Thread {
         } catch (Exception e) {
             log.info("-------------------------------------------------");
             log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
-            log.log(Level.SEVERE, "Exception: ", e);
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -203,10 +210,10 @@ public class Task extends Thread {
         } catch (IOException e) {
             log.info("-------------------------------------------------");
             log.log(Level.SEVERE, "Не удалось загрузить сраницы");
-            log.log(Level.SEVERE, "Exception: ", e);
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
         }
 
-        for (int i = 1; i <= (maxPages > 10 ? 10 : maxPages); i++) {
+        for (int i = 1; i <= (maxPages > 100 ? 100 : maxPages); i++) {
             RequestTask task = new RequestTask(String.valueOf(i));
             task.setUrl( url + "&page=" + i);
             task.setType(ReqTaskType.CATEGORY);
@@ -310,7 +317,7 @@ public class Task extends Thread {
 
     private List<RequestTask> convertToTasks(Collection<String> asins) {
 
-        log.info("Формирую ссылки на листинги");
+//        log.info("Формирую ссылки на листинги");
         List<RequestTask> result = new ArrayList<>();
         for (String asin : asins) {
             RequestTask task = new RequestTask(asin);

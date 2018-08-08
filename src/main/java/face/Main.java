@@ -33,14 +33,15 @@ public class Main {
         system.addHandler(handler);
         system.setUseParentHandlers(false);
 
-//        System.setErr(null);
+        System.setErr(null);
 
         log.info("Читаем все параметры с пользовательского интерфейса.");
         InterfaceParams parameters = new InterfaceParams();
 
-        parameters.setUrlListing("https://www.amazon.com/s?marketplaceID=ATVPDKIKX0DER&me=A1RDYXN1JW1DJR&merchant=A1RDYXN1JW1DJR&redirect=true");
-//        parameters.setUrlListing("");
-//        parameters.setPathToListing("asin.txt");
+//        parameters.setUrlListing("https://www.amazon.com/s?marketplaceID=ATVPDKIKX0DER&me=A1RDYXN1JW1DJR&merchant=A1RDYXN1JW1DJR&redirect=true");
+        parameters.setUrlListing("");
+//        parameters.setPathToListing("");
+        parameters.setPathToListing("asin.txt");
         parameters.setPathToBadSellers("");
 
         // ----------------------------------

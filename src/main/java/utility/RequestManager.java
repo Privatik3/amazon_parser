@@ -36,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class RequestManager {
 
@@ -96,9 +97,6 @@ public class RequestManager {
             if (wave != 0) {
                 parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
                 log.info("Средние количество результатов за круг: " + parseSpeed);
-//                System.out.println("=============================================================");
-//                System.out.println("PARSE SPEED: " + parseSpeed);
-//                System.out.println("=============================================================");
             }
             wave = taskMultiply.size();
 
@@ -164,6 +162,12 @@ public class RequestManager {
             }
 
             cdl.await(10, TimeUnit.SECONDS);
+
+            // Ожидаем завершения кэширования, не привышаем определённое количество потоков
+            int cacheCount = dbThreads.stream().filter(Thread::isAlive).collect(Collectors.toList()).size();
+            if (cacheCount > 0)
+                for (Thread thread : dbThreads)
+                    thread.join();
 
             if (result.size() == 0 && tasks.size() != 0)
                 throw new Exception("За круг было получено 0 результатов");

@@ -2,6 +2,8 @@ package db;
 
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import manager.RequestTask;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 
 import java.io.PrintStream;
 import java.sql.*;
@@ -12,7 +14,8 @@ import java.util.List;
 
 public class DBHandler {
 
-    private static HtmlCompressor compressor = new HtmlCompressor();
+//    private static HtmlCompressor compressor = new HtmlCompressor();
+    private static Whitelist whitelist = new Whitelist();
     private static Connection conn;
 
     static {
@@ -20,24 +23,31 @@ public class DBHandler {
             conn = DriverManager.getConnection("jdbc:h2:C:/Developers/amazon_parser/cache");
             conn.setAutoCommit(true);
 
-            compressor.setRemoveComments(true);
-            compressor.setRemoveMultiSpaces(true);
-            compressor.setRemoveIntertagSpaces(true);
-            compressor.setRemoveQuotes(true);
-            compressor.setRemoveScriptAttributes(true);
-            compressor.setRemoveStyleAttributes(true);
-            compressor.setRemoveLinkAttributes(true);
-            compressor.setRemoveFormAttributes(true);
-            compressor.setRemoveInputAttributes(true);
-            compressor.setRemoveJavaScriptProtocol(true);
-            compressor.setRemoveHttpProtocol(true);
-            compressor.setRemoveHttpsProtocol(true);
+            String[] tags = new String[] {"a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "keygen", "label", "legend", "li", "main", "map", "mark", "math", "menu", "menuitem", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "param", "picture", "pre", "progress", "q", "rb", "rp", "rt", "rtc", "ruby", "s", "samp", "section", "select", "slot", "small", "source", "span", "strong", "sub", "summary", "sup", "svg", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr"};
+            String[] attrs = new String[] {"id", "class", "data-asin", "alt"};
 
-            compressor.setCompressCss(true);
-            compressor.setCssCompressor(s -> "");
+            whitelist.addTags(tags);
+            for (String tag : tags)
+                whitelist.addAttributes(tag, attrs);
 
-            compressor.setCompressJavaScript(true);
-            compressor.setJavaScriptCompressor(s -> "");
+//            compressor.setRemoveComments(true);
+//            compressor.setRemoveMultiSpaces(true);
+//            compressor.setRemoveIntertagSpaces(true);
+//            compressor.setRemoveQuotes(true);
+//            compressor.setRemoveScriptAttributes(true);
+//            compressor.setRemoveStyleAttributes(true);
+//            compressor.setRemoveLinkAttributes(true);
+//            compressor.setRemoveFormAttributes(true);
+//            compressor.setRemoveInputAttributes(true);
+//            compressor.setRemoveJavaScriptProtocol(true);
+//            compressor.setRemoveHttpProtocol(true);
+//            compressor.setRemoveHttpsProtocol(true);
+//
+//            compressor.setCompressCss(true);
+//            compressor.setCssCompressor(s -> "");
+//
+//            compressor.setCompressJavaScript(true);
+//            compressor.setJavaScriptCompressor(s -> "");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -55,7 +65,8 @@ public class DBHandler {
             for (RequestTask item : items) {
 
                 insertStatement.setString(1, item.getId());
-                insertStatement.setString(2, compressor.compress(item.getHtml()));
+//                insertStatement.setString(2, compressor.compress(item.getHtml()));
+                insertStatement.setString(2, Jsoup.clean(item.getHtml(), whitelist));
                 insertStatement.addBatch();
             }
 
@@ -90,7 +101,8 @@ public class DBHandler {
             for (RequestTask item : items) {
 
                 insertStatement.setString(1, item.getId());
-                insertStatement.setString(2, compressor.compress(item.getHtml()));
+//                insertStatement.setString(2, compressor.compress(item.getHtml()));
+                insertStatement.setString(2, Jsoup.clean(item.getHtml(), whitelist));
                 insertStatement.addBatch();
             }
 
@@ -123,7 +135,8 @@ public class DBHandler {
             for (RequestTask item : items) {
 
                 insertStatement.setString(1, item.getId());
-                insertStatement.setString(2, compressor.compress(item.getHtml()));
+//                insertStatement.setString(2, compressor.compress(item.getHtml()));
+                insertStatement.setString(2, Jsoup.clean(item.getHtml(), whitelist));
                 insertStatement.addBatch();
             }
 
@@ -156,7 +169,8 @@ public class DBHandler {
             for (RequestTask item : items) {
 
                 insertStatement.setString(1, item.getId());
-                insertStatement.setString(2, compressor.compress(item.getHtml()));
+//                insertStatement.setString(2, compressor.compress(item.getHtml()));
+                insertStatement.setString(2, Jsoup.clean(item.getHtml(), whitelist));
                 insertStatement.addBatch();
             }
 
@@ -295,6 +309,31 @@ public class DBHandler {
         }
 
         return result;
+    }
+
+
+    public static void clearAll() {
+        Statement statement = null;
+
+        try {
+            // ITEMS
+            statement = conn.createStatement();
+
+            statement.executeUpdate("DELETE FROM AMAZON_ITEMS");
+            statement.executeUpdate("DELETE FROM AMAZON_OFFERS");
+            statement.executeUpdate("DELETE FROM AMAZON_PAGES");
+            statement.executeUpdate("DELETE FROM AMAZON_SEARCH");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void clearAmazonItems() {

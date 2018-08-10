@@ -36,13 +36,28 @@ public class Ebay {
             }
             item.setItemNumber(itemNumber);
 
-            Double price = "";
+            Double price = 0.00;
+            String priceText = "";
             try {
-                price = doc.select("#prcIsum").attr("content");
+                priceText = doc.select("#prcIsum").attr("content");
+                price = Double.parseDouble(priceText);
             } catch (Exception ignored) {
             }
-            item.setItemNumber(price);
+            item.setPrice(price);
 
+            String seller = "";
+            try {
+                seller = doc.select("#mbgLink span").text();
+            } catch (Exception ignored) {
+            }
+            item.setSeller(seller);
+
+            String shipping = "";
+            try {
+                shipping = doc.select("#fshippingCost").text();
+            } catch (Exception ignored) {
+            }
+            item.setItemNumber(shipping);
 
             // Здесь уже норм код
             result.add(item);

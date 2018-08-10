@@ -1,6 +1,9 @@
 package excel;
 
 import org.apache.poi.hssf.record.HCenterRecord;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
@@ -10,23 +13,25 @@ import parser.ItemShortInfo;
 import parser.Offer;
 
 import java.awt.Color;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class Handler {
 
     public static List<String> readListOfAsin(String pathToListing) {
 
         List<String> result = new ArrayList<>();
+
         try {
-            result = Files.readAllLines(Paths.get(pathToListing));
+            XSSFWorkbook myExcelBook = new XSSFWorkbook(new FileInputStream( new File(pathToListing)));
+            XSSFSheet myExcelSheet = myExcelBook.getSheet("Лист1");
+//            result = Files.readAllLines(Paths.get(pathToListing));
+            for (Integer i = 0 ; myExcelSheet.getLastRowNum() >= i ; i++) {
+                XSSFRow row = myExcelSheet.getRow(i);
+                result.add(row.getCell(0).getStringCellValue());
+            }
         } catch (Exception e) {
             System.err.println("Не удалось загрузить листинг");
             e.printStackTrace();

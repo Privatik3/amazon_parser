@@ -1,5 +1,6 @@
 package excel;
 
+import db.DBHandler;
 import org.apache.poi.hssf.record.HCenterRecord;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -9,6 +10,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTColor;
 import parser.AmazonItem;
+import parser.EbayItem;
 import parser.ItemShortInfo;
 import parser.Offer;
 
@@ -17,8 +19,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Handler {
+
+    private static Logger log = Logger.getLogger(Handler.class.getName());
 
     public static List<String> readListOfAsin(String pathToListing) {
 
@@ -97,11 +103,31 @@ public class Handler {
 
         item.setSearchInfo(searchInfo);
 
+        // Ebay
+        List<EbayItem> ebayItems = new ArrayList<>();
+        EbayItem eItem1 = new EbayItem();
+        eItem1.setItemNumber("164843134");
+        eItem1.setPrice(0.0);
+        eItem1.setPriceShipping(5.0);
+        eItem1.setSeller("Seller !");
+        eItem1.setShipping("$47,5");
+        ebayItems.add(eItem1);
+
+        EbayItem eItem2 = new EbayItem();
+        eItem2.setItemNumber("164843134");
+        eItem2.setPrice(0.0);
+        eItem2.setPriceShipping(5.0);
+        eItem2.setSeller("Seller !");
+        eItem2.setShipping("$47,5");
+        ebayItems.add(eItem2);
+
+        item.setEbayItems(ebayItems);
+
         result.add(item);
         result.add(item);
 
 
-//        writeResult(result);
+        writeResult(result);
     }
 
     private static XSSFCellStyle createCellWithStyle(XSSFWorkbook workbook, Color color) {
@@ -133,98 +159,112 @@ public class Handler {
         return new XSSFColor(ctColor);
     }
 
-    public static void writeResult(List<AmazonItem> result) throws IOException {
+    public static void writeResult(List<AmazonItem> result) {
 
 
         final String FILE_NAME = "MyFirstExcel.xlsx";
         // TODO Нужно сформировать и сохранить Excel файл
 
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Datatypes in Java");
+        try {
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet("Datatypes in Java");
 
-        int rowNum = 0;
-        for (AmazonItem item : result) {
+            int rowNum = 0;
+            for (AmazonItem item : result) {
 
-            List<Row> rows = new ArrayList<>();
-            for (int i = 0; i < 6; i++) {
-                XSSFRow row = sheet.createRow(rowNum++);
-                for (int j = 0; j < 19; j++)
-                    row.createCell(j).setCellValue("N/A");
+                List<Row> rows = new ArrayList<>();
+                for (int i = 0; i < 6; i++) {
+                    XSSFRow row = sheet.createRow(rowNum++);
+                    for (int j = 0; j < 19; j++)
+                        row.createCell(j).setCellValue("N/A");
 
-                rows.add(row);
-            }
-            try {
-                rows.get(0).createCell(0).setCellValue(String.valueOf(item.getAvailability()));
-                rows.get(0).createCell(1).setCellValue(String.valueOf(item.getPromoOffer()));
-                rows.get(0).createCell(2).setCellValue(item.getAsin());
-                rows.get(0).createCell(3).setCellValue(item.getProductName());
-
-                int offerCell = 1;
-                for (Offer offer : item.getOffers()) {
-                    rows.get(offerCell).createCell(4).setCellValue(offer.getPriceShipingInfo());
-                    rows.get(offerCell).createCell(5).setCellValue(offer.getSeller());
-                    rows.get(offerCell).createCell(6).setCellValue(offer.getPrice());
-                    rows.get(offerCell++).createCell(7).setCellValue(offer.getShipingInfo());
+                    rows.add(row);
                 }
-                rows.get(0).createCell(4).setCellValue(item.getPriceShipping());
-                rows.get(0).createCell(5).setCellValue(item.getBuyBoxSeller());
-                rows.get(0).createCell(6).setCellValue(item.getBuyBoxPrice());
-                rows.get(0).createCell(7).setCellValue(item.getBuyBoxShipping());
+                try {
+                    rows.get(0).createCell(0).setCellValue(String.valueOf(item.getAvailability()));
+                    rows.get(0).createCell(1).setCellValue(String.valueOf(item.getPromoOffer()));
+                    rows.get(0).createCell(2).setCellValue(item.getAsin());
+                    rows.get(0).createCell(3).setCellValue(item.getProductName());
 
-                offerCell = 0;
-                for (ItemShortInfo info : item.getSearchInfo()) {
-                    rows.get(offerCell).createCell(8).setCellValue(info.getAsin());
-                    if (info.getFirstOffer() != null) {
-                        rows.get(offerCell).createCell(9).setCellValue(info.getFirstOffer().getPriceShipingInfo());
+                    int offerCell = 1;
+                    for (Offer offer : item.getOffers()) {
+                        rows.get(offerCell).createCell(4).setCellValue(offer.getPriceShipingInfo());
+                        rows.get(offerCell).createCell(5).setCellValue(offer.getSeller());
+                        rows.get(offerCell).createCell(6).setCellValue(offer.getPrice());
+                        rows.get(offerCell++).createCell(7).setCellValue(offer.getShipingInfo());
                     }
-                    rows.get(offerCell++).createCell(10).setCellValue(String.valueOf(info.getAvailability()));
-                }
+                    rows.get(0).createCell(4).setCellValue(item.getPriceShipping());
+                    rows.get(0).createCell(5).setCellValue(item.getBuyBoxSeller());
+                    rows.get(0).createCell(6).setCellValue(item.getBuyBoxPrice());
+                    rows.get(0).createCell(7).setCellValue(item.getBuyBoxShipping());
 
-                rows.get(0).createCell(11).setCellValue(item.getVendor());
-                rows.get(0).createCell(12).setCellValue(item.getBrand());
-                rows.get(0).createCell(13).setCellValue(item.getPartNumber());
-                rows.get(0).createCell(14).setCellValue(item.getItemModelNumber());
-                rows.get(0).createCell(14).setCellValue(item.getAsinDomin());
-                rows.get(0).createCell(15).setCellValue(item.getRating());
-                rows.get(0).createCell(16).setCellValue(item.getQuantity());
-                rows.get(0).createCell(17).setCellValue(item.getbSR());
-                rows.get(0).createCell(18).setCellValue(item.getbSRCategory());
-                rows.get(0).createCell(19).setCellValue(item.getDateFirstAvailable());
-            } catch (Exception e) {}
-        }
+                    offerCell = 0;
+                    for (ItemShortInfo info : item.getSearchInfo()) {
+                        rows.get(offerCell).createCell(8).setCellValue(info.getAsin());
+                        if (info.getFirstOffer() != null) {
+                            rows.get(offerCell).createCell(9).setCellValue(info.getFirstOffer().getPriceShipingInfo());
+                        }
+                        rows.get(offerCell++).createCell(10).setCellValue(String.valueOf(info.getAvailability()));
+                    }
 
-        int curRow = 1;
-        boolean flag = false;
-        for (Row row : sheet) {
-            XSSFCellStyle style = flag ?
-                    createCellWithStyle(workbook, new Color(208, 208, 208)) :
-                    createCellWithStyle(workbook, Color.WHITE);
+                    offerCell = 3;
+                    for (EbayItem eIttem : item.getEbayItems()) {
+                        rows.get(offerCell).createCell(8).setCellValue(eIttem.getItemNumber());
+                        rows.get(offerCell).createCell(9).setCellValue(eIttem.getPriceShipping());
+                        rows.get(offerCell++).createCell(10).setCellValue(eIttem.getSeller());
+                    }
 
-
-            for(Cell cell : row) {
-                if (cell.getColumnIndex() >= 8 && cell.getColumnIndex() <= 10) {
-                    cell.setCellStyle(createCellWithStyle(workbook, new Color(198, 255, 193)));
-                } else {
-                    cell.setCellStyle(style);
-                }
-            }
-
-
-
-
-            if ((curRow++ % 6) == 0) {
-                flag = !flag;
-
-                for (int i = 0; i <= 19; i++) {
-                    if (!(i > 3 && i < 11))
-                        sheet.addMergedRegion(new CellRangeAddress(curRow - 7,curRow - 2,i,i));
+                    rows.get(0).createCell(11).setCellValue(item.getVendor());
+                    rows.get(0).createCell(12).setCellValue(item.getBrand());
+                    rows.get(0).createCell(13).setCellValue(item.getPartNumber());
+                    rows.get(0).createCell(14).setCellValue(item.getItemModelNumber());
+                    rows.get(0).createCell(14).setCellValue(item.getAsinDomin());
+                    rows.get(0).createCell(15).setCellValue(item.getRating());
+                    rows.get(0).createCell(16).setCellValue(item.getQuantity());
+                    rows.get(0).createCell(17).setCellValue(item.getbSR());
+                    rows.get(0).createCell(18).setCellValue(item.getbSRCategory());
+                    rows.get(0).createCell(19).setCellValue(item.getDateFirstAvailable());
+                } catch (Exception e) {
                 }
             }
-        }
+            int numberColor = 1;
+            int curRow = 1;
+            boolean flag = false;
+            for (Row row : sheet) {
+                XSSFCellStyle style = flag ?
+                        createCellWithStyle(workbook, new Color(208, 208, 208)) :
+                        createCellWithStyle(workbook, Color.WHITE);
+
+                for (Cell cell : row) {
+                    if (cell.getColumnIndex() >= 8 && cell.getColumnIndex() <= 10) {
+                        Color color = color = new Color(225, 255, 188);
+                        if ((((cell.getRowIndex()) / 3) + 1) % 2 == 0) color = new Color(255, 247, 205);
+                        cell.setCellStyle(createCellWithStyle(workbook, color));
+                    } else {
+                        cell.setCellStyle(style);
+                    }
+                    numberColor++;
+                }
+
+
+                if ((curRow++ % 6) == 0) {
+                    flag = !flag;
+
+                    for (int i = 0; i <= 19; i++) {
+                        if (!(i > 3 && i < 11))
+                            sheet.addMergedRegion(new CellRangeAddress(curRow - 7, curRow - 2, i, i));
+                    }
+                }
+            }
 
             FileOutputStream outputStream = new FileOutputStream(FILE_NAME);
             workbook.write(outputStream);
             workbook.close();
+        } catch (Exception e) {
+            log.info("-------------------------------------------------");
+            log.log(Level.SEVERE, "Не удалось сохранить Excel таблицу");
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+        }
 
 
         System.out.println("Done");

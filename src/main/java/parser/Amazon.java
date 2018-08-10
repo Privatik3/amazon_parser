@@ -490,7 +490,7 @@ public class Amazon {
                     offer.setSeller(sellerNew);
 
 
-
+//            //TODO Заменить 5 на значение пользователя
                     Double addPrice = 0.0;
                     String shipingConverterOffer = offer.getShipingInfo();
                     try {
@@ -519,7 +519,7 @@ public class Amazon {
             } catch (Exception ignored) {
             }
 
-//            //TODO Заменить 5 на значение пользователя
+
 //            try {
 //                Offer offer = new Offer();
 //

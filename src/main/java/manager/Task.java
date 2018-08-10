@@ -112,7 +112,9 @@ public class Task extends Thread {
                 HashSet<String> asins = new HashSet<>();
                 search.forEach(s -> asins.addAll(s.getAsins()));
 
+                int asinCount = 0;
                 for (String asin : asins) {
+                    if (asinCount++ > 2) break;
                     Optional<EbayItem> first = ebaySearchItems.stream()
                             .filter(x -> x.getItemNumber().equals(asin))
                             .findFirst();
@@ -134,7 +136,7 @@ public class Task extends Thread {
             ebaySearch.clear();
 
 
-
+System.exit(1);
 
 
 
@@ -181,7 +183,9 @@ public class Task extends Thread {
                 HashSet<String> asins = new HashSet<>();
                 search.forEach(s -> asins.addAll(s.getAsins()));
 
+                int asinCount = 0;
                 for (String asin : asins) {
+                    if (asinCount++ > 2) break;
                     Optional<AmazonItem> first = searchItems.stream()
                             .filter(x -> x.getAsin().equals(asin))
                             .findFirst();

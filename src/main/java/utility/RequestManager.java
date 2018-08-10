@@ -125,7 +125,7 @@ public class RequestManager {
                         HttpGet request = new HttpGet(taskUrl);
                         request.setConfig(proxy);
 
-                        if (!task.getType().toString().toLowerCase().contains("ebay"))
+//                        if (!task.getType().toString().toLowerCase().contains("ebay"))
                             request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
 
                         CloseableHttpResponse response = client.execute(request);

@@ -6,6 +6,15 @@ public class EbayItem {
     private Double price;
     private String seller;
     private String shipping;
+    private Double priceShipping;
+
+    public Double getPriceShipping() {
+        return priceShipping;
+    }
+
+    public void setPriceShipping(Double priceShipping) {
+        this.priceShipping = priceShipping;
+    }
 
     public String getSeller() {
         return seller;

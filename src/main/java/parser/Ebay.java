@@ -51,6 +51,17 @@ public class Ebay {
             } catch (Exception ignored) {}
             item.setShipping(shipping);
 
+            Double priceShipping = 0.00;
+            String priceShippingText = "";
+            try {
+                priceShippingText = item.getShipping();
+                if (!priceShippingText.contains("FREE")) {
+                    priceShippingText = priceShippingText.substring(1);
+                    priceShipping = item.getPrice() + Double.parseDouble(priceShippingText);
+                } else {priceShipping = item.getPrice();}
+            } catch (Exception ignored) {}
+            item.setPriceShipping(priceShipping);
+
             // Здесь уже норм код
             result.add(item);
         }
@@ -77,12 +88,23 @@ public class Ebay {
             List<String> asins = new ArrayList<>();
             try {
 
-                asins.add("281290254100");
-//                Elements asinNewEl = doc.select("li[id^='result']");
-//                for (int i = 0; i < (asinNewEl.size() > 3 ? 3 : asinNewEl.size()); i++) {
-//                    Element el = asinNewEl.get(i);
-//                    asins.add(el.attr("data-asin"));
-//                }
+//                asins.add("281290254100");
+                String check = "";
+                try {
+                    check = doc.select("h1.srp-controls__count-heading").text();
+                    check = check.split(" r")[0];
+                    Integer checkSize = Integer.parseInt(check);
+                    for ( Integer i = 0 ; i < (checkSize > 3 ? 3 : checkSize); i++) {
+                        check = doc.select("li.s-item .s-item__image a").get(i).attr("href");
+                        String s = check.split("\\?")[0];
+                        asins.add(s.substring(s.lastIndexOf("/") + 1));
+
+
+                    }
+                } catch (Exception ignored) {
+                }
+
+
             } catch (Exception ignored) { }
             item.setAsins(asins);
 

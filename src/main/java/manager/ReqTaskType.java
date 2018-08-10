@@ -5,5 +5,7 @@ public enum ReqTaskType {
     CATEGORY,
     ITEM,
     SEARCH,
-    OFFER
+    OFFER,
+    EBAY_CATEGORY,
+    EBAY_ITEM
 }

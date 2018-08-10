@@ -539,16 +539,16 @@ public class Amazon {
         return result;
     }
 
-    public static List<AmazonSearch> parseSearchReq(List<RequestTask> tasks) {
+    public static List<Search> parseSearchReq(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
         log.info("Начинаем обработку результатов поиска");
 
         long start = new Date().getTime();
 
-        ArrayList<AmazonSearch> result = new ArrayList<>();
+        ArrayList<Search> result = new ArrayList<>();
         for (RequestTask task : tasks) {
-            AmazonSearch item = new AmazonSearch();
+            Search item = new Search();
             item.setRelatedAsin(task.getId().substring(0, task.getId().length() - 2));
 
             Document doc = Jsoup.parse(task.getHtml());

@@ -67,6 +67,14 @@ public class AmazonItem {
         return result.substring(0, result.length() -  1);
     }
 
+    public List<EbayItem> getEbayItems() {
+        return ebayItems;
+    }
+
+    public void setEbayItems(List<EbayItem> ebayItems) {
+        this.ebayItems = ebayItems;
+    }
+
     public Boolean getNew() {
         return isNew;
     }

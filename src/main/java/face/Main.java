@@ -42,7 +42,7 @@ public class Main {
 //        parameters.setUrlListing("https://www.amazon.com/s?marketplaceID=ATVPDKIKX0DER&me=A1RDYXN1JW1DJR&merchant=A1RDYXN1JW1DJR&redirect=true");
         parameters.setUrlListing("");
 //        parameters.setPathToListing("");
-        parameters.setPathToListing("asin.xlsx");
+        parameters.setPathToListing("asins.xlsx");
         parameters.setPathToBadSellers("");
 
         // ----------------------------------

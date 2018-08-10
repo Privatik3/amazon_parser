@@ -4,28 +4,21 @@ import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.httpclient.FiberHttpClientBuilder;
 import co.paralleluniverse.strands.SuspendableRunnable;
 import db.DBHandler;
-import manager.ReqTaskType;
 import manager.RequestTask;
-import manager.Task;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -37,7 +30,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class RequestManager {
 
@@ -133,7 +125,8 @@ public class RequestManager {
                         HttpGet request = new HttpGet(taskUrl);
                         request.setConfig(proxy);
 
-                        request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
+                        if (!task.getType().toString().toLowerCase().contains("ebay"))
+                            request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
 
                         CloseableHttpResponse response = client.execute(request);
 //                        System.out.println(response.getStatusLine());
@@ -141,8 +134,7 @@ public class RequestManager {
                             entity = response.getEntity();
                             String body = EntityUtils.toString(entity, "UTF-8");
 
-                            if (body.contains("CB327533540")) {
-
+                            if (body.contains("CB327533540") || body.contains("6e11485a66d91eff")) {
                                 task.setHtml(body);
                                 result.add(task);
                                 goodProxy.add(proxy);
@@ -168,7 +160,7 @@ public class RequestManager {
             cdl.await(12, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 3 ) {
+            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 30 ) {
                 for (RequestTask task : taskMultiply)
                     Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 
@@ -195,6 +187,12 @@ public class RequestManager {
                         break;
                     case CATEGORY:
                         DBHandler.addAmazonPages(items);
+                        break;
+                    case EBAY_CATEGORY:
+                        DBHandler.addEbaySearch(items);
+                        break;
+                    case EBAY_ITEM:
+                        DBHandler.addEbayItems(items);
                         break;
                 }
 

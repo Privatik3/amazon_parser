@@ -4,6 +4,7 @@ import excel.Handler;
 import face.InterfaceParams;
 import parser.AmazonItem;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ public class Manager {
         tasks.get(taskID).start();
     }
 
-    public static void saveResultToFile(String taskID) {
+    public static void saveResultToFile(String taskID) throws IOException {
 
         log.info("Сохраняем результат работы в Excel файл");
         List<AmazonItem> result = tasks.get(taskID).getResult();

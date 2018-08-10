@@ -1,6 +1,5 @@
 package db;
 
-import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import manager.RequestTask;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;

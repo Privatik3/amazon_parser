@@ -2,6 +2,7 @@ package face;
 
 import manager.Manager;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,7 +15,7 @@ public class Main {
 
     private static Logger log = Logger.getLogger(Main.class.getName());
 
-    public static void main(String[] args) throws ParseException, InterruptedException {
+    public static void main(String[] args) throws ParseException, InterruptedException, IOException {
 
         Logger system = Logger.getLogger("");
         Handler[] handlers = system.getHandlers();

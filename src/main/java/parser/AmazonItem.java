@@ -27,6 +27,7 @@ public class AmazonItem {
     private HashSet<String> searchReq = new HashSet<>();
     private List<Offer> offers = new ArrayList<>();
     private List<ItemShortInfo> searchInfo = new ArrayList<>();
+    private List<EbayItem> ebayItems = new ArrayList<>();
 
 
     @Override

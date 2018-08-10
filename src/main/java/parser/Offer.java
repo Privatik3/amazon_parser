@@ -5,6 +5,15 @@ public class Offer {
     private String price;
     private String shipingInfo;
     private String seller;
+    private Double priceShipingInfo;
+
+    public Double getPriceShipingInfo() {
+        return priceShipingInfo;
+    }
+
+    public void setPriceShipingInfo(Double priceShipingInfo) {
+        this.priceShipingInfo = priceShipingInfo;
+    }
 
     public String getPrice() {
         return price;

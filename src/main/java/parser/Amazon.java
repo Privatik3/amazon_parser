@@ -64,7 +64,13 @@ public class Amazon {
 
                 String sellerName = "";
                 try {
-                    sellerName = doc.select("#merchant-info a").get(0).text();
+                    Elements sellel = doc.select("#merchant-info a");
+                    if (sellel.size() > 0) {
+                        sellerName = doc.select("#merchant-info a").get(0).text();
+                    }
+                    if (sellerName.length() < 1) {
+                        sellerName = doc.select(".pa_mbc_on_amazon_offer .mbcMerchantName").text();
+                    }
                 } catch (Exception ignored) {
                 }
                 item.setBuyBoxSeller(sellerName);
@@ -135,12 +141,17 @@ public class Amazon {
                     }
                     if (Shipping.length() < 1) {
                         Shipping = doc.select("#shippingMessageInsideBuyBox_feature_div").text();
-                        if (Shipping.contains("+")) {
-                            Shipping = Shipping.substring(Shipping.indexOf("+") + 1);
+                        if (Shipping.length() > 1) {
+                            if (Shipping.contains("+")) {
+                                Shipping = Shipping.substring(Shipping.indexOf("+") + 1);
+                            }
                         }
                     }
                     if (Shipping.length() < 1) {
                         Shipping = doc.select("#price-shipping-message").text();
+                    }
+                    if (Shipping.length() < 1) {
+                        Shipping = doc.select("#soldByThirdParty span").get(1).text();
                     }
                 } catch (Exception ignored) {
                 }
@@ -349,7 +360,6 @@ public class Amazon {
                 }
                 item.setDateFirstAvailable(dateCreation);
 
-                // TODO Проверить что бы ссылка на оферы содержала в себе ASIN товара
                 Boolean offerStatus = false;
                 try {
                     String newHref = doc.select("#olp_feature_div").text();
@@ -459,21 +469,66 @@ public class Amazon {
                     Offer offer = new Offer();
                     Element el = priceNewEl.get(i);
 
-                    offer.setShipingInfo(el.select("p.olpShippingInfo").text());
-                    offer.setPrice(el.select(".olpPriceColumn span").get(0).text());
+                    String shipInfo = "";
+                    try {
+                        shipInfo = el.select("p.olpShippingInfo").text();
+                    } catch (Exception ignore) {}
+                    offer.setShipingInfo(shipInfo);
 
-                    String SellerNew = el.select(".olpSellerColumn h3").text();
+                    String shipPrice = "";
+                    try {
+                        shipPrice = el.select(".olpPriceColumn span").get(0).text();
+                    } catch (Exception ignore) {}
+                    offer.setPrice(shipPrice);
 
-                    if (SellerNew.length() < 1)
-                        SellerNew = el.select(".olpSellerColumn h3 img").attr("alt");
+                    String sellerNew = "";
+                    try {
+                       sellerNew = el.select(".olpSellerColumn h3").text();
+                        if (sellerNew.isEmpty())
+                            sellerNew = el.select(".olpSellerColumn h3 img").attr("alt");
+                    } catch (Exception ignore) {}
+                    offer.setSeller(sellerNew);
 
-                    offer.setSeller(SellerNew);
+
+
+                    Double addPrice = 0.0;
+                    String shipingConverterOffer = offer.getShipingInfo();
+                    try {
+                        if (shipingConverterOffer.contains("over")) {
+                            addPrice = Double.parseDouble(offer.getPrice().substring(1) + 5);
+                        } else if (shipingConverterOffer.contains("FREE")) {
+                            addPrice = Double.parseDouble(offer.getPrice().substring(1));
+                        } else if (shipingConverterOffer.contains("$")) {
+                            if (addPrice > 1.0) {
+                                shipingConverterOffer = shipingConverterOffer.substring(2).split(" ")[0];
+                                addPrice = Double.parseDouble(offer.getPrice().substring(1) + Double.parseDouble(shipingConverterOffer));
+                            }
+                        } else if (shipingConverterOffer.length() < 1) {
+                            addPrice = Double.parseDouble(offer.getPrice().substring(1));
+                        }
+                    } catch (Exception ignore) {}
+                    offer.setPriceShipingInfo(addPrice);
+
+
 
                     priceNew.add(offer);
+
+
+
                 }
             } catch (Exception ignored) {
             }
+
+//            //TODO Заменить 5 на значение пользователя
+//            try {
+//                Offer offer = new Offer();
+//
+//            } catch (Exception ignored) {
+//            }
+//
             item.setOffers(priceNew);
+
+
 
             // Здесь уже норм код
             result.add(item);

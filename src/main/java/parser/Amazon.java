@@ -71,6 +71,12 @@ public class Amazon {
                     if (sellerName.length() < 1) {
                         sellerName = doc.select(".pa_mbc_on_amazon_offer .mbcMerchantName").text();
                     }
+                    if (sellerName.contains("Details")) {
+                        sellerName = "";
+                    }
+                    if (sellerName.contains("easy-to-open packaging")) {
+                        sellerName = "Amazon.com";
+                    }
                 } catch (Exception ignored) {
                 }
                 item.setBuyBoxSeller(sellerName);
@@ -187,13 +193,21 @@ public class Amazon {
                         }
                     }
                     if (brand.length() < 1) {
-                        brand = doc.select("#productDescription").text();
-                        if (brand.contains("Brand Story")) {
-                            brand = brand.split("Brand Story")[1];
-                        } else {
-                            brand = "";
+                        brandEl = doc.select("th");
+                        for (Element el : brandEl) {
+                            if (el.text().contains("Brand Name")) {
+                                brand = el.parent().select("td").text();
+                            }
                         }
                     }
+//                    if (brand.length() < 1) {
+//                        brand = doc.select("#productDescription").text();
+//                        if (brand.contains("Brand Story")) {
+//                            brand = brand.split("Brand Story")[1];
+//                        } else {
+//                            brand = "";
+//                        }
+//                    }
                 } catch (Exception ignored) {
                 }
                 item.setBrand(brand.trim());
@@ -491,16 +505,18 @@ public class Amazon {
 
 
 //            //TODO Заменить 5 на значение пользователя
-                    Double addPrice = 0.0;
+                    Double addPrice = 0.00;
                     String shipingConverterOffer = offer.getShipingInfo();
                     try {
                         if (shipingConverterOffer.contains("over")) {
-                            addPrice = Double.parseDouble(offer.getPrice().substring(1) + 5);
-                        } else if (shipingConverterOffer.contains("FREE")) {
+                            addPrice = Double.parseDouble(offer.getPrice().substring(1) + 5.00);
+                        }
+                            if (shipingConverterOffer.contains("FREE")) {
                             addPrice = Double.parseDouble(offer.getPrice().substring(1));
-                        } else if (shipingConverterOffer.contains("$")) {
+                        }
+                            if (shipingConverterOffer.contains("+ $")) {
                             if (addPrice > 1.0) {
-                                shipingConverterOffer = shipingConverterOffer.substring(2).split(" ")[0];
+                                shipingConverterOffer = shipingConverterOffer.substring(3).split(" ")[0];
                                 addPrice = Double.parseDouble(offer.getPrice().substring(1) + Double.parseDouble(shipingConverterOffer));
                             }
                         } else if (shipingConverterOffer.length() < 1) {

@@ -97,9 +97,10 @@ public class Ebay {
                     for ( Integer i = 0 ; i < (checkSize > 3 ? 3 : checkSize); i++) {
                         check = doc.select("li.s-item .s-item__image a").get(i).attr("href");
                         String s = check.split("\\?")[0];
-                        asins.add(s.substring(s.lastIndexOf("/") + 1));
+                        String asin = s.substring(s.lastIndexOf("/") + 1);
 
-
+                        if(!asin.isEmpty())
+                            asins.add(asin);
                     }
                 } catch (Exception ignored) {
                 }

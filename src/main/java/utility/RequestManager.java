@@ -98,7 +98,7 @@ public class RequestManager {
 
             tasks.clear();
             for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
-                    && tasks.size() < (taskMultiply.size() * 4); i++) {
+                    && tasks.size() < (taskMultiply.size() * (taskMultiply.size() == 1 ? 1 : 4)); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
 
@@ -123,7 +123,9 @@ public class RequestManager {
 //                                .replaceAll("https", "http");
                         String taskUrl = task.getUrl().replaceAll("https", "http");
                         HttpGet request = new HttpGet(taskUrl);
-                        request.setConfig(proxy);
+                        if (tasks.size() != 1)
+                            request.setConfig(proxy);
+
 
 //                        if (!task.getType().toString().toLowerCase().contains("ebay"))
                             request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
@@ -160,7 +162,7 @@ public class RequestManager {
             cdl.await(12, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 30 ) {
+            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 3 ) {
                 for (RequestTask task : taskMultiply)
                     Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 

@@ -125,6 +125,7 @@ public class Task extends Thread {
                         info.setPrice(first.get().getPrice());
                         info.setSeller(first.get().getSeller());
                         info.setShipping(first.get().getShipping());
+                        info.setPriceShipping(first.get().getPriceShipping());
 
                         searchInfo.add(info);
                     }
@@ -134,10 +135,6 @@ public class Task extends Thread {
             }
             ebaySearchItems.clear();
             ebaySearch.clear();
-
-
-System.exit(1);
-
 
 
             log.info("-------------------------------------------------");

@@ -115,7 +115,7 @@ public class DBHandler {
 
         PreparedStatement insertStatement = null;
         try {
-            String sql = "INSERT INTO EBAY_SEARCH (ASIN, HTML) values (?, ?)";
+            String sql = "INSERT INTO AMAZON_SEARCH (ASIN, HTML) values (?, ?)";
             insertStatement = conn.prepareStatement(sql);
 
             for (RequestTask item : items) {

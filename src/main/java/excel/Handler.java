@@ -18,6 +18,7 @@ import java.awt.Color;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +37,9 @@ public class Handler {
 //            result = Files.readAllLines(Paths.get(pathToListing));
             for (Integer i = 0 ; myExcelSheet.getLastRowNum() >= i ; i++) {
                 XSSFRow row = myExcelSheet.getRow(i);
-                result.add(row.getCell(0).getStringCellValue());
+                String val = row.getCell(0).getStringCellValue();
+                if (!val.isEmpty())
+                    result.add(val);
             }
         } catch (Exception e) {
             System.err.println("Не удалось загрузить листинг");
@@ -188,12 +191,12 @@ public class Handler {
 
                     int offerCell = 1;
                     for (Offer offer : item.getOffers()) {
-                        rows.get(offerCell).createCell(4).setCellValue(offer.getPriceShipingInfo());
+                        rows.get(offerCell).createCell(4).setCellValue(String.format("%.2f" , offer.getPriceShipingInfo()));
                         rows.get(offerCell).createCell(5).setCellValue(offer.getSeller());
-                        rows.get(offerCell).createCell(6).setCellValue(offer.getPrice());
+                        rows.get(offerCell).createCell(6).setCellValue(offer.getPrice().substring(1).replace("." , ","));
                         rows.get(offerCell++).createCell(7).setCellValue(offer.getShipingInfo());
                     }
-                    rows.get(0).createCell(4).setCellValue(item.getPriceShipping());
+                    rows.get(0).createCell(4).setCellValue(String.format("%.2f" , item.getPriceShipping()));
                     rows.get(0).createCell(5).setCellValue(item.getBuyBoxSeller());
                     rows.get(0).createCell(6).setCellValue(item.getBuyBoxPrice());
                     rows.get(0).createCell(7).setCellValue(item.getBuyBoxShipping());
@@ -218,12 +221,12 @@ public class Handler {
                     rows.get(0).createCell(12).setCellValue(item.getBrand());
                     rows.get(0).createCell(13).setCellValue(item.getPartNumber());
                     rows.get(0).createCell(14).setCellValue(item.getItemModelNumber());
-                    rows.get(0).createCell(14).setCellValue(item.getAsinDomin());
-                    rows.get(0).createCell(15).setCellValue(item.getRating());
-                    rows.get(0).createCell(16).setCellValue(item.getQuantity());
-                    rows.get(0).createCell(17).setCellValue(item.getbSR());
-                    rows.get(0).createCell(18).setCellValue(item.getbSRCategory());
-                    rows.get(0).createCell(19).setCellValue(item.getDateFirstAvailable());
+                    rows.get(0).createCell(15).setCellValue(item.getAsinDomin());
+                    rows.get(0).createCell(16).setCellValue(item.getRating());
+                    rows.get(0).createCell(17).setCellValue(item.getQuantity());
+                    rows.get(0).createCell(18).setCellValue(item.getbSR());
+                    rows.get(0).createCell(19).setCellValue(item.getbSRCategory());
+                    rows.get(0).createCell(20).setCellValue(new SimpleDateFormat("yyyy.MM.dd").format(item.getDateFirstAvailable()));
                 } catch (Exception e) {
                 }
             }
@@ -250,7 +253,7 @@ public class Handler {
                 if ((curRow++ % 6) == 0) {
                     flag = !flag;
 
-                    for (int i = 0; i <= 19; i++) {
+                    for (int i = 0; i <= 20; i++) {
                         if (!(i > 3 && i < 11))
                             sheet.addMergedRegion(new CellRangeAddress(curRow - 7, curRow - 2, i, i));
                     }

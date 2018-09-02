@@ -1,11 +1,32 @@
 package parser;
 
+import java.util.ArrayList;
+
 public class ItemShortInfo {
 
     private String asin;
     private Boolean availability;
     private Boolean isNew;
     private Offer firstOffer;
+
+    private ArrayList<String> params;
+    private String vendor;
+
+    public ArrayList<String> getParams() {
+        return params;
+    }
+
+    public void setParams(ArrayList<String> params) {
+        this.params = params;
+    }
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
 
     public Boolean getIsNew() {
         return isNew;

@@ -4,6 +4,7 @@ import db.DBHandler;
 import excel.Handler;
 import face.Filter;
 import face.InterfaceParams;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import parser.*;
@@ -12,15 +13,17 @@ import utility.RequestManager;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
+import java.util.logging.Formatter;
 import java.util.stream.Collectors;
 
 public class Task extends Thread {
 
-    private static Logger log = Logger.getLogger(Task.class.getName());
-    private static PrintStream err;
+    private static Logger log = Logger.getLogger("");
+
+    private static Boolean DEBUG_MOD = true;
 
     private Integer status = 0;
     private InterfaceParams params;
@@ -30,8 +33,23 @@ public class Task extends Thread {
         this.params = parameters;
         this.setDaemon(true);
 
-        err = System.err;
-        System.setErr(null);
+        System.setProperty("addPrice", String.valueOf(params.getAddToPrice()));
+        System.setProperty("fibers", String.valueOf(params.getCountOfFibers()));
+
+        if (DEBUG_MOD) {
+            java.util.logging.Handler[] handlers = log.getHandlers();
+            log.removeHandler(handlers[0]);
+
+            ConsoleHandler handler = new ConsoleHandler();
+            handler.setFormatter(new Formatter() {
+                @Override
+                public String format(LogRecord record) {
+                    return new SimpleDateFormat("HH:mm:ss.SSS").format(new Date()) + " -> " +
+                                    record.getMessage() + "\r\n";
+                }
+            });
+            log.addHandler(handler);
+        }
     }
 
     @Override
@@ -40,105 +58,127 @@ public class Task extends Thread {
         try {
             long time = new Date().getTime();
 
-            log.info("Инициализируем очистку всех кэшей");
-            DBHandler.clearAll();
+            if (!DEBUG_MOD)
+                DBHandler.clearAll();
+
+            log.info("Updating zip code");
+            if (!DEBUG_MOD)
+                System.setProperty("zipCode", updateZipCode(params.getUsaZipCode()));
 
             List<RequestTask> reqTasks = new ArrayList<>();
             if (!params.getUrlListing().isEmpty()) {
                 log.info("-------------------------------------------------");
                 log.info("Формируем список ссылок на страницы каталога");
                 reqTasks = initCatalogReq(params.getUrlListing());
-                RequestManager.execute(reqTasks);
+                List<RequestTask> pages = RequestManager.execute(reqTasks, DEBUG_MOD);
                 reqTasks.clear();
 
                 log.info("-------------------------------------------------");
                 log.info("Обрабатываем асины, полеченные по ссылке пользователя");
-                reqTasks.addAll(convertToTasks(Amazon.parseCategory(DBHandler.selectAllPages()), "https://www.amazon.com/dp/"));
+                reqTasks.addAll(convertToTasks(Amazon.parseCategory(pages), "https://www.amazon.com/dp/"));
+                pages.clear();
             }
 
+
+            // Выкачиваем первую волну
+            reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing()), "https://www.amazon.com/dp/", ReqTaskType.SEARCH_ITEM));
+
+            List<RequestTask> sdf = RequestManager.execute(reqTasks, DEBUG_MOD);
+            reqTasks.clear();
+
+            // TODO Написать новый парсер который выберит всё с характеристик и вендора
+            Amazon.parseShortItems(sdf);
+            sdf.clear();
+
+
+            System.exit(1);
+
             if (!params.getPathToListing().isEmpty())
-                reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing()),"https://www.amazon.com/dp/"));
+                reqTasks.addAll(convertToTasks(Handler.readListOfAsin(params.getPathToListing()), "https://www.amazon.com/dp/"));
 
             if (reqTasks.size() == 0)
                 throw new Exception("Не было получено ни одного ASIN для обработки");
 
-            log.info("Выполняем запрос на выкачку листинга");
-            RequestManager.execute(reqTasks);
+            log.info("Execute the request to load the listing");
+            List<RequestTask> amazonItems = RequestManager.execute(reqTasks, DEBUG_MOD);
             reqTasks.clear();
 
-            result = Amazon.parseItems(DBHandler.selectAllItems());
+            result = Amazon.parseItems(amazonItems);
+            amazonItems.clear();
 
             log.info("-------------------------------------------------");
-            log.info("Выполняем фильтрацию полученных результатов");
+            log.info("Filter the results");
             filterResult();
-            log.info("Фильтрация завершена, осталось " + result.size() + " позиций");
+            log.info("The filtering is complete, leaving " + result.size() + " positions");
+
+//            log.info("-------------------------------------------------");
+//            log.info("Create and download search queries ( Ebay )");
+//            for (AmazonItem item : result) {
+//                Integer num = 0;
+//                for (String req : item.getSearchReq()) {
+//                    RequestTask task = new RequestTask(item.getAsin() + ":" + String.valueOf(num++));
+//                    task.setUrl("https://www.ebay.com/sch/i.html?_from=R40&_nkw=" + URLEncoder.encode(req, "UTF-8") + "&_sacat=0&LH_TitleDesc=0&_fcid=1&_sop=15&_dmd=1&LH_BIN=1&LH_ItemCondition=3&LH_RPA=1&_stpos=07064&rt=nc&LH_PrefLoc=3&LH_ItemCondition=3");
+//                    task.setType(ReqTaskType.EBAY_CATEGORY);
+//
+//                    reqTasks.add(task);
+//                }
+//            }
+//            List<RequestTask> ebaySearchResult = RequestManager.execute(reqTasks, DEBUG_MOD);
+//            reqTasks.clear();
+//            List<Search> ebaySearch = Ebay.parseSearchReq(ebaySearchResult);
+//            ebaySearchResult.clear();
+//
+//            log.info("-------------------------------------------------");
+//            log.info("Download items received after the search ( Ebay )");
+//            reqTasks = convertToTasks(getAsinsFromSearchResult(ebaySearch), "https://www.ebay.com/itm/");
+//
+//            List<RequestTask> allEbayItems = RequestManager.execute(reqTasks, DEBUG_MOD);
+//            reqTasks.clear();
+//            List<EbayItem> ebaySearchItems = Ebay.parseItems(allEbayItems);
+//            allEbayItems.clear();
+//
+//            log.info("-------------------------------------------------");
+//            log.info("Merge the result");
+//            for (AmazonItem item : result) {
+//                if (item.getSearchReq().size() == 0)
+//                    continue;
+//
+//                ArrayList<EbayItem> searchInfo = new ArrayList<>();
+//
+//                List<Search> search = ebaySearch.stream()
+//                        .filter(x -> x.getRelatedAsin().equals(item.getAsin()))
+//                        .collect(Collectors.toList());
+//
+//                HashSet<String> asins = new HashSet<>();
+//                search.forEach(s -> asins.addAll(s.getAsins()));
+//
+//                int asinCount = 0;
+//                for (String asin : asins) {
+//                    if (asinCount++ > 2) break;
+//                    Optional<EbayItem> first = ebaySearchItems.stream()
+//                            .filter(x -> x.getItemNumber().equals(asin))
+//                            .findFirst();
+//
+//                    if (first.isPresent()) {
+//                        EbayItem info = new EbayItem();
+//                        info.setItemNumber(asin);
+//                        info.setPrice(first.get().getPrice());
+//                        info.setSeller(first.get().getSeller());
+//                        info.setShipping(first.get().getShipping());
+//                        info.setPriceShipping(first.get().getPriceShipping());
+//
+//                        searchInfo.add(info);
+//                    }
+//                }
+//
+//                item.setEbayItems(searchInfo);
+//            }
+//            ebaySearchItems.clear();
+//            ebaySearch.clear();
+
 
             log.info("-------------------------------------------------");
-            log.info("Формируем и выкачиваем поисковые запросы ( Ebay )");
-            for (AmazonItem item : result) {
-                Integer num = 0;
-                for (String req : item.getSearchReq()) {
-                    RequestTask task = new RequestTask(item.getAsin() + ":" + String.valueOf(num++));
-                    task.setUrl("https://www.ebay.com/sch/i.html?_from=R40&_nkw=" + URLEncoder.encode(req, "UTF-8") + "&_sacat=0&LH_TitleDesc=0&_fcid=1&_sop=15&_dmd=1&LH_BIN=1&LH_ItemCondition=3&LH_RPA=1&_stpos=07064&rt=nc&LH_PrefLoc=3");
-                    task.setType(ReqTaskType.EBAY_CATEGORY);
-
-                    reqTasks.add(task);
-                }
-            }
-            RequestManager.execute(reqTasks);
-            reqTasks.clear();
-            List<Search> ebaySearch = Ebay.parseSearchReq(DBHandler.selectAllEbaySearchResults());
-
-            log.info("-------------------------------------------------");
-            log.info("Докачиваем товары полученные после поиска ( Ebay )");
-            reqTasks = convertToTasks(getAsinsFromSearchResult(ebaySearch), "https://www.ebay.com/itm/");
-
-            RequestManager.execute(reqTasks);
-            reqTasks.clear();
-            List<EbayItem> ebaySearchItems = Ebay.parseItems(DBHandler.selectAllEbayItems());
-
-            log.info("-------------------------------------------------");
-            log.info("Сливаем полеченный результат");
-            for (AmazonItem item : result) {
-                if (item.getSearchReq().size() == 0)
-                    continue;
-
-                ArrayList<EbayItem> searchInfo = new ArrayList<>();
-
-                List<Search> search = ebaySearch.stream()
-                        .filter(x -> x.getRelatedAsin().equals(item.getAsin()))
-                        .collect(Collectors.toList());
-
-                HashSet<String> asins = new HashSet<>();
-                search.forEach(s -> asins.addAll(s.getAsins()));
-
-                int asinCount = 0;
-                for (String asin : asins) {
-                    if (asinCount++ > 2) break;
-                    Optional<EbayItem> first = ebaySearchItems.stream()
-                            .filter(x -> x.getItemNumber().equals(asin))
-                            .findFirst();
-
-                    if (first.isPresent()) {
-                        EbayItem info = new EbayItem();
-                        info.setItemNumber(asin);
-                        info.setPrice(first.get().getPrice());
-                        info.setSeller(first.get().getSeller());
-                        info.setShipping(first.get().getShipping());
-                        info.setPriceShipping(first.get().getPriceShipping());
-
-                        searchInfo.add(info);
-                    }
-                }
-
-                item.setEbayItems(searchInfo);
-            }
-            ebaySearchItems.clear();
-            ebaySearch.clear();
-
-
-            log.info("-------------------------------------------------");
-            log.info("Формируем и выкачиваем поисковые запросы ( Amazon )");
+            log.info("Create and download search queries ( Amazon )");
 
             for (AmazonItem item : result) {
                 Integer num = 0;
@@ -151,22 +191,103 @@ public class Task extends Thread {
                 }
             }
 
-            RequestManager.execute(reqTasks);
+            List<RequestTask> amazonSearchResult = RequestManager.execute(reqTasks, DEBUG_MOD);
             reqTasks.clear();
-            List<Search> searchResult = Amazon.parseSearchReq(DBHandler.selectAllSearchResults());
+            List<Search> searchResult = Amazon.parseSearchReq(amazonSearchResult);
+            amazonSearchResult.clear();
+
+            // --------------------- НОВЫЙ БЛОК ---------------------
+            /*
+                1. Сформировать новый лист тасков
+                   для каждого relatedAsin не больше 5 asins
+                   не добавлять асины которые == relatedAsin
+                   каждый добавленый asin удалять из списка
+             */
+
+            HashSet<String> uniqueAsins = new HashSet<>();
+            for (AmazonItem item : result) {
+                if (item.getSearchReq().size() == 0 || item.getSearchInfo().size() >= 3)
+                    continue;
+
+                Optional<Search> any = searchResult.stream().filter(srch -> srch.getRelatedAsin().equals(item.getAsin())).findAny();
+                if (any.isPresent()) {
+                    Search search = any.get();
+                    Iterator<String> iterator = search.getAsins().iterator();
+
+                    int maxCount = 0;
+                    while (iterator.hasNext() && maxCount++ < 5) {
+                        String asin = iterator.next();
+                        if (search.getRelatedAsin().equals(asin)) {
+                            iterator.remove();
+                            continue;
+                        }
+
+                        uniqueAsins.add(asin);
+                    }
+                }
+            }
+
+            // Выкачиваем первую волну
+            reqTasks = convertToTasks(new ArrayList<>(uniqueAsins), "https://www.amazon.com/dp/", ReqTaskType.SEARCH_ITEM);
+            uniqueAsins.clear();
+
+            List<RequestTask> searchAmazonItems = RequestManager.execute(reqTasks, DEBUG_MOD);
+            reqTasks.clear();
+
+            // TODO Написать новый парсер который выберит всё с характеристик и вендора
+            List<ItemShortInfo> searchItems = Amazon.parseShortItems(searchAmazonItems);
+            searchAmazonItems.clear();
+
+            // Заполняем результат
+            for (AmazonItem item : result) {
+                if (item.getSearchReq().size() == 0 || item.getSearchInfo().size() >= 3)
+                    continue;
+
+                Optional<Search> any = searchResult.stream().filter(srch -> srch.getRelatedAsin().equals(item.getAsin())).findAny();
+                if (any.isPresent()) {
+                    Search search = any.get();
+                    Iterator<String> iterator = search.getAsins().iterator();
+
+                    while (iterator.hasNext()) {
+                        String asin = iterator.next();
+
+
+
+//                        Optional<AmazonItem> anySItem = searchItems.stream().filter(sIt -> sIt.getAsin().equals(asin)).findAny();
+//                        if (anySItem.isPresent()) {
+//                            iterator.remove();
+//                            AmazonItem shortInfo = anySItem.get();
+//
+//                            // TODO Здесь нужен иф в котором будут сравниватся два итема
+//                            if ()
+//
+//
+//                            ItemShortInfo info = new ItemShortInfo();
+//                            info.setAsin(asin);
+//                            info.setAvailability(shortInfo.getAvailability());
+//                            info.setIsNew(shortInfo.getNew());
+//
+//                            item.getSearchInfo().add(info);
+//                        }
+                    }
+                }
+            }
+
+            System.out.println();
+
+
+            /*log.info("-------------------------------------------------");
+            log.info("Download items received after the search ( Amazon )");
+            reqTasks = convertToTasks(getAsinsFromSearchResult(searchResult), "https://www.amazon.com/dp/", ReqTaskType.SEARCH_ITEM);
+
+            List<RequestTask> searchAmazonItems = RequestManager.execute(reqTasks, DEBUG_MOD);
+            reqTasks.clear();
+
+            List<AmazonItem> searchItems = Amazon.parseItems(searchAmazonItems);
+            searchAmazonItems.clear();
 
             log.info("-------------------------------------------------");
-            log.info("Докачиваем товары полученные после поиска ( Amazon )");
-            reqTasks = convertToTasks(getAsinsFromSearchResult(searchResult), "https://www.amazon.com/dp/");
-            DBHandler.clearAmazonItems();
-
-            RequestManager.execute(reqTasks);
-            reqTasks.clear();
-
-            List<AmazonItem> searchItems = Amazon.parseItems(DBHandler.selectAllItems());
-
-            log.info("-------------------------------------------------");
-            log.info("Сливаем полеченный результат");
+            log.info("Merge the result");
             for (AmazonItem item : result) {
                 if (item.getSearchReq().size() == 0)
                     continue;
@@ -203,9 +324,9 @@ public class Task extends Thread {
                 item.setSearchInfo(searchInfo);
             }
             searchItems.clear();
-            searchResult.clear();
+            searchResult.clear();*/
 
-            log.info("Формируем список запросов на выкачку оферов");
+            log.info("Form the list of requests for the loading of offers");
             HashSet<String> asins = new HashSet<>();
             for (AmazonItem item : result) {
                 if (item.getAvailability() && item.getNew())
@@ -219,12 +340,14 @@ public class Task extends Thread {
             reqTasks = convertToOfferTasks(asins);
             asins.clear();
 
-            RequestManager.execute(reqTasks);
+            List<RequestTask> allOffers = RequestManager.execute(reqTasks, DEBUG_MOD);
             reqTasks.clear();
 
-            List<ItemOffer> offers = Amazon.parseOffers(DBHandler.selectAllOffers());
+            List<ItemOffer> offers = Amazon.parseOffers(allOffers);
+            allOffers.clear();
+
             log.info("-------------------------------------------------");
-            log.info("Заполняем оферы в результирующей выборке");
+            log.info("Fill out the promo");
 
             for (AmazonItem item : result) {
                 String mainAsin = item.getAsin();
@@ -243,10 +366,8 @@ public class Task extends Thread {
             }
             offers.clear();
 
-            status = 100;
-
             log.info("-------------------------------------------------");
-            log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + (new Date().getTime() - time) + " ms");
+            log.info("FULL TIME OF PERFORMANCE: " + (new Date().getTime() - time) + " ms");
             log.info("-------------------------------------------------");
 
             DBHandler.close();
@@ -255,10 +376,50 @@ public class Task extends Thread {
             log.log(Level.SEVERE, "Ошибка во время выполнения таска, закрываем такс");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
 
-            System.setErr(err);
             e.printStackTrace();
+        } finally {
+            status = 100;
         }
 
+    }
+
+    private String updateZipCode(String zip) {
+
+        String result = "";
+        if (zip.isEmpty()) zip = "07064";
+        String address = "https://www.amazon.com/gp/delivery/ajax/address-change.html";
+
+        try {
+            Map<String, String> cookies = new HashMap<>();
+            cookies.put("session-id", "131-6060488-5218335");
+            cookies.put("session-id-time", "2082787201l");
+            cookies.put("ubid-main", "134-8378907-0944350");
+
+            Connection.Response res = Jsoup.connect(address)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0")
+                    .ignoreContentType(true)
+                    .cookies(cookies)
+                    .data(
+                            "actionSource", "glow",
+                            "deviceType", "web",
+                            "locationType", "LOCATION_INPUT",
+                            "pageType", "Gateway",
+                            "zipCode", zip)
+                    .method(Connection.Method.POST)
+                    .execute();
+
+            String sessionId = res.cookie("session-id");
+            String sessionTime = res.cookie("session-id-time");
+            String ubid = res.cookie("ubid-main");
+
+            result = String.format("session-id=%s; session-id-time=%s; ubid-main=%s", sessionId, sessionTime, ubid);
+        } catch (Exception e) {
+            log.info("-------------------------------------------------");
+            log.log(Level.SEVERE, "Не удалось обновить zip code");
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+        }
+
+        return result;
     }
 
     private List<RequestTask> initCatalogReq(String url) {
@@ -284,7 +445,7 @@ public class Task extends Thread {
 
         for (int i = 1; i <= (maxPages > 100 ? 100 : maxPages); i++) {
             RequestTask task = new RequestTask(String.valueOf(i));
-            task.setUrl( url + "&page=" + i);
+            task.setUrl(url + "&page=" + i);
             task.setType(ReqTaskType.CATEGORY);
 
             tasks.add(task);
@@ -380,6 +541,19 @@ public class Task extends Thread {
                 }
             }
         }
+    }
+
+    private List<RequestTask> convertToTasks(Collection<String> asins, String prefix, ReqTaskType type) {
+        List<RequestTask> result = new ArrayList<>();
+        for (String asin : asins) {
+            RequestTask task = new RequestTask(asin);
+            task.setUrl(prefix + asin);
+            task.setType(type);
+
+            result.add(task);
+        }
+
+        return result;
     }
 
     private List<RequestTask> convertToTasks(Collection<String> asins, String prefix) {

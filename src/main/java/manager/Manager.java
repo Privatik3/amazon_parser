@@ -22,7 +22,8 @@ public class Manager {
         String taskID = String.valueOf(new Date().getTime());
         tasks.put(taskID, new Task(parameters));
 
-        log.info("Таск создан и добавлен в лист на выполнения");
+//        log.info("Таск создан и добавлен в лист на выполнения");
+        log.info("Task created and added to the work queue");
         return taskID;
     }
 
@@ -33,15 +34,18 @@ public class Manager {
     }
 
     public static void process(String taskID) {
-        log.info("Начинаем работу таска");
+//        log.info("Начинаем работу таска");
+        log.info("Start the task");
         tasks.get(taskID).start();
     }
 
-    public static void saveResultToFile(String taskID) throws IOException {
+    public static void saveResultToFile(String taskID) {
 
-        log.info("Сохраняем результат работы в Excel файл");
+        log.info("Save the result in Excel file");
         List<AmazonItem> result = tasks.get(taskID).getResult();
-        Handler.writeResult(result);
+
+        if (result.size() > 0)
+            Handler.writeResult(result);
     }
 
     public static void clearTask(String taskID) {

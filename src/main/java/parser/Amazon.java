@@ -18,7 +18,7 @@ public class Amazon {
     public static List<AmazonItem> parseItems(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем обработку листингов");
+        log.info("Begin processing the listings");
 
         long start = new Date().getTime();
 
@@ -370,6 +370,7 @@ public class Amazon {
                     int month = new SimpleDateFormat("MMMM", Locale.US).parse(monthData).getMonth() + 1;
                     dateFirstAvailable = month + "/" + day + "/" + year;
                     dateCreation = new SimpleDateFormat("MM/dd/yyyy").parse(dateFirstAvailable);
+                    new SimpleDateFormat("yyyy.MM.dd").format(dateFirstAvailable);
                 } catch (Exception ignored) {
                 }
                 item.setDateFirstAvailable(dateCreation);
@@ -425,7 +426,7 @@ public class Amazon {
                 result.add(item);
             }
         }
-        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
         return result;
     }
 
@@ -462,7 +463,7 @@ public class Amazon {
     public static List<ItemOffer> parseOffers(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем обработку оферов");
+        log.info("Begin processing the promo");
 
         long start = new Date().getTime();
 
@@ -509,15 +510,19 @@ public class Amazon {
                     String shipingConverterOffer = offer.getShipingInfo();
                     try {
                         if (shipingConverterOffer.contains("over")) {
-                            addPrice = Double.parseDouble(offer.getPrice().substring(1) + 5.00);
-                        }
-                            if (shipingConverterOffer.contains("FREE")) {
                             addPrice = Double.parseDouble(offer.getPrice().substring(1));
+                            addPrice = addPrice + Double.parseDouble(System.getProperty("addPrice"));
+                        }
+                        if (addPrice < 1) {
+                            if (shipingConverterOffer.contains("FREE")) {
+                                addPrice = Double.parseDouble(offer.getPrice().substring(1));
+                            }
                         }
                             if (shipingConverterOffer.contains("+ $")) {
-                            if (addPrice > 1.0) {
+                            if (addPrice < 1) {
                                 shipingConverterOffer = shipingConverterOffer.substring(3).split(" ")[0];
-                                addPrice = Double.parseDouble(offer.getPrice().substring(1) + Double.parseDouble(shipingConverterOffer));
+                                addPrice = Double.parseDouble(offer.getPrice().substring(1));
+                                addPrice = addPrice + Double.parseDouble(shipingConverterOffer);
                             }
                         } else if (shipingConverterOffer.length() < 1) {
                             addPrice = Double.parseDouble(offer.getPrice().substring(1));
@@ -550,7 +555,7 @@ public class Amazon {
             result.add(item);
         }
 
-        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
 
         return result;
     }
@@ -558,7 +563,7 @@ public class Amazon {
     public static List<Search> parseSearchReq(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем обработку результатов поиска");
+        log.info("Begin processing search results");
 
         long start = new Date().getTime();
 
@@ -573,7 +578,7 @@ public class Amazon {
             List<String> asins = new ArrayList<>();
             try {
                 Elements asinNewEl = doc.select("li[id^='result']");
-                for (int i = 0; i < (asinNewEl.size() > 3 ? 3 : asinNewEl.size()); i++) {
+                for (int i = 0; i < asinNewEl.size(); i++) {
                     Element el = asinNewEl.get(i);
                     asins.add(el.attr("data-asin"));
                 }
@@ -585,7 +590,7 @@ public class Amazon {
             result.add(item);
         }
 
-        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
 
         return result;
     }
@@ -593,7 +598,7 @@ public class Amazon {
     public static HashSet<String> parseCategory(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем сбор ASINS по страницам категории");
+        log.info("Begin collecting ASINS by page category");
 
         long start = new Date().getTime();
 
@@ -610,7 +615,75 @@ public class Amazon {
             } catch (Exception ignored) {}
         }
 
-        log.info("Время затраченое на сбор: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
+
+        return result;
+    }
+
+    public static List<ItemShortInfo> parseShortItems(List<RequestTask> tasks) {
+
+        log.info("-------------------------------------------------");
+        log.info("Begin processing amazon search pages");
+
+        long start = new Date().getTime();
+
+        ArrayList<ItemShortInfo> result = new ArrayList<>();
+        for (RequestTask task : tasks) {
+            ItemShortInfo shortInfo = new ItemShortInfo();
+            shortInfo.setAsin(task.getId());
+
+            Document doc = Jsoup.parse(task.getHtml());
+            // Начало обработки
+
+            /*
+            detail-bullets_feature_div : B01BHUSR38
+            productDetails_feature_div : B000W8J67S
+            detail-bullets : B000K6TF1Y
+            prodDetails : B00LSOURPA
+            detailBullets : B075NZC7PR
+            technicalSpecifications_feature_div : B016P70092
+             */
+
+            ArrayList<String> params = new ArrayList<>();
+            try {
+                if (doc.select("div#detail-bullets_feature_div").size() > 0) {
+
+                    log.info(task.getId() + " : detail-bullets_feature_div");
+
+                } else if (doc.select("div#productDetails_feature_div").size() > 0) {
+
+                    log.info(task.getId() + " : productDetails_feature_div");
+
+                } else if (doc.select("div#detail-bullets").size() > 0) {
+
+                    log.info(task.getId() + " : detail-bullets");
+
+                } else if (doc.select("div#prodDetails").size() > 0) {
+
+                    log.info(task.getId() + " : prodDetails");
+
+                } else if (doc.select("div#detailBullets").size() > 0) {
+
+                    log.info(task.getId() + " : detailBullets");
+
+                } else if (doc.select("div#technicalSpecifications_feature_div").size() > 0) {
+
+                    log.info(task.getId() + " : technicalSpecifications_feature_div");
+
+                } else {
+                    log.info("===========================================");
+                    log.info("Fail: " + task.getId());
+                    log.info("===========================================");
+                }
+            } catch (Exception ignore) {ignore.printStackTrace();}
+            shortInfo.setParams(params);
+
+
+            result.add(shortInfo);
+        }
+
+
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
 
         return result;
     }

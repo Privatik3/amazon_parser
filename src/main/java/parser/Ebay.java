@@ -19,7 +19,7 @@ public class Ebay {
     public static List<EbayItem> parseItems(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем обработку ebay листингов");
+        log.info("Begin processing the ebay listings");
 
         long start = new Date().getTime();
 
@@ -56,8 +56,10 @@ public class Ebay {
             try {
                 priceShippingText = item.getShipping();
                 if (!priceShippingText.contains("FREE")) {
-                    priceShippingText = priceShippingText.substring(1);
-                    priceShipping = item.getPrice() + Double.parseDouble(priceShippingText);
+                    if (!priceShippingText.isEmpty()) {
+                        priceShippingText = priceShippingText.substring(1).split(" ")[0];
+                        priceShipping = item.getPrice() + Double.parseDouble(priceShippingText);
+                    } else {priceShipping = item.getPrice();}
                 } else {priceShipping = item.getPrice();}
             } catch (Exception ignored) {}
             item.setPriceShipping(priceShipping);
@@ -66,14 +68,14 @@ public class Ebay {
             result.add(item);
         }
 
-        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
         return result;
     }
 
     public static List<Search> parseSearchReq(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
-        log.info("Начинаем обработку результатов поиска");
+        log.info("Begin processing search results");
 
         long start = new Date().getTime();
 
@@ -113,7 +115,7 @@ public class Ebay {
             result.add(item);
         }
 
-        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        log.info("Processing time: " + (new Date().getTime() - start) + " ms");
 
         return result;
     }

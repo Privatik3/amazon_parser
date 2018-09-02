@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.httpclient.FiberHttpClientBuilder;
 import co.paralleluniverse.strands.SuspendableRunnable;
 import db.DBHandler;
+import manager.ReqTaskType;
 import manager.RequestTask;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -48,8 +49,8 @@ public class RequestManager {
                     setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(256).
-                    setMaxConnTotal(256).build();
+                    setMaxConnPerRoute(Integer.parseInt(System.getProperty("fibers"))).
+                    setMaxConnTotal(Integer.parseInt(System.getProperty("fibers"))).build();
 
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
@@ -57,16 +58,63 @@ public class RequestManager {
         }
     }
 
-    public static void execute(List<RequestTask> tasks) throws Exception {
+    private static List<RequestTask> returnDebugMod(ReqTaskType type) {
+        switch (type) {
+            case CATEGORY:
+                return DBHandler.selectAllPages();
+            case ITEM:
+                return DBHandler.selectAllItems();
+            case SEARCH_ITEM:
+                return DBHandler.selectSearchItems();
+            case OFFER:
+                return DBHandler.selectAllOffers();
+            case SEARCH:
+                return DBHandler.selectAllSearchResults();
+            case EBAY_CATEGORY:
+                return DBHandler.selectAllEbaySearchResults();
+            case EBAY_ITEM:
+                return DBHandler.selectAllEbayItems();
+        }
 
-//        if (false) {
-//            return testMod(tasks);
-//        }
+        return null;
+    }
+
+    public static List<RequestTask> execute(List<RequestTask> tasks, boolean isDebug) throws Exception {
+
+        ReqTaskType type = tasks.get(0).getType();
+//        if (type == ReqTaskType.SEARCH_ITEM) isDebug = false;
+
+        if (isDebug) {
+            return returnDebugMod(type);
+        } else {
+            switch (type) {
+                case CATEGORY:
+                    DBHandler.clearAmazonPages();
+                    break;
+                case ITEM:
+                    DBHandler.clearAmazonItems();
+                    break;
+                case SEARCH_ITEM:
+                    DBHandler.clearAmazonSearchItems();
+                    break;
+                case OFFER:
+                    DBHandler.clearAmazonOffers();
+                    break;
+                case SEARCH:
+                    DBHandler.clearAmazonSearch();
+                    break;
+                case EBAY_CATEGORY:
+                    DBHandler.clearEbaySearch();
+                    break;
+                case EBAY_ITEM:
+                    DBHandler.clearEbayItems();
+                    break;
+            }
+        }
 
         if (client == null)
             initClient();
 
-//        ArrayList<Thread> dbThreads = new ArrayList<>();
         HashSet<RequestTask> result = new HashSet<>();
 
         ArrayList<RequestConfig> allProxy = ProxyManager.getProxy();
@@ -86,18 +134,23 @@ public class RequestManager {
 
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
-            resultStatus = result.size();
+
+            if (resultStatus == result.size())
+                failCount = failCount + 1;
+            else
+                resultStatus = result.size();
+
             log.info("-------------------------------------------------");
-            log.info("Инициализирую новую волну, осталось: " + taskMultiply.size() + " тасков");
+            log.info("Create a new wave, left: " + taskMultiply.size() + " tasks");
 
             if (wave != 0) {
                 parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
-                log.info("Средние количество результатов за круг: " + parseSpeed);
+                log.info("Average download speed: " + parseSpeed);
             }
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 256 ? 256 : allProxy.size())
+            for (int i = 0; tasks.size() < (allProxy.size() > Integer.parseInt(System.getProperty("fibers")) ? Integer.parseInt(System.getProperty("fibers")) : allProxy.size())
                     && tasks.size() < (taskMultiply.size() * (taskMultiply.size() == 1 ? 1 : 4)); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
@@ -128,7 +181,7 @@ public class RequestManager {
 
 
 //                        if (!task.getType().toString().toLowerCase().contains("ebay"))
-                            request.setHeader("Cookie", "session-id=147-0335730-5757324; session-id-time=2082787201l; ubid-main=134-8611924-3863705");
+                            request.setHeader("Cookie", System.getProperty("zipCode"));
 
                         CloseableHttpResponse response = client.execute(request);
 //                        System.out.println(response.getStatusLine());
@@ -162,7 +215,7 @@ public class RequestManager {
             cdl.await(12, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount++ > 3 ) {
+            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 3 ) {
                 for (RequestTask task : taskMultiply)
                     Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
 
@@ -180,6 +233,9 @@ public class RequestManager {
                 switch (items.get(0).getType()) {
                     case ITEM:
                         DBHandler.addAmazonItems(items);
+                        break;
+                    case SEARCH_ITEM:
+                        DBHandler.addAmazonSearchItems(items);
                         break;
                     case SEARCH:
                         DBHandler.addAmazonSearch(items);
@@ -201,42 +257,18 @@ public class RequestManager {
                 result.clear();
             }
 
-//            if (tasks.get(0).getType() == ReqTaskType.ITEM) {
-//            System.out.println("RESULT_SIZE: " + result.size());
-//            int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
-//            System.out.println("SEND PROGRESS: " + progress);
-//            }
         }
 
         log.info("-------------------------------------------------");
-        log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
-//        log.info("Ждём завершение кэширования данных ...");
+        log.info("Finished parsing, time spent: " + (new Date().getTime() - startTime) + " ms");
 
-        // Кэшируем результаты для тест мода
-        /*ArrayList<RequestTask> requestTasks = new ArrayList<>(result);
-
-        for (RequestTask rTask : requestTasks) {
-            Files.write(Paths.get("html/" + rTask.getId()), rTask.getHtml().getBytes());
-        }*/
-    }
-
-    private static List<RequestTask> testMod(List<RequestTask> tasks) throws IOException {
-
-        ArrayList<RequestTask> result = new ArrayList<>();
-        for (RequestTask task : tasks) {
-            File f = new File("html/" + task.getId());
-            if (!f.exists())
-                continue;
-
-            task.setHtml(String.join("\n", Files.readAllLines(Paths.get(f.getAbsolutePath()))));
-            result.add(task);
-        }
-
-        return result;
+        return returnDebugMod(type);
     }
 
     public static void closeClient() throws IOException {
-        client.close();
-        client = null;
+        if (client != null) {
+            client.close();
+            client = null;
+        }
     }
 }

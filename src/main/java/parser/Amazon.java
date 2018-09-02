@@ -51,8 +51,10 @@ public class Amazon {
                 String vendor = "";
                 try {
                     vendor = doc.select("a#bylineInfo").text();
-                } catch (Exception ignored) {
-                }
+                    if (vendor.isEmpty()) {
+                        vendor = doc.select("a#brand").text();
+                    }
+                } catch (Exception ignored) {}
                 item.setVendor(vendor.trim());
 
                 String name = "";
@@ -635,6 +637,19 @@ public class Amazon {
             Document doc = Jsoup.parse(task.getHtml());
             // Начало обработки
 
+
+
+
+
+
+
+
+
+
+
+
+
+
             /*
             detail-bullets_feature_div : B01BHUSR38
             productDetails_feature_div : B000W8J67S
@@ -647,29 +662,62 @@ public class Amazon {
             ArrayList<String> params = new ArrayList<>();
             try {
                 if (doc.select("div#detail-bullets_feature_div").size() > 0) {
-
-                    log.info(task.getId() + " : detail-bullets_feature_div");
-
+                    Elements paramsEl = doc.select("div#detail-bullets_feature_div table ul li");
+                    for (Element el : paramsEl) {
+                        try {
+                        el.select("b").remove();
+                        params.add(el.text());
+                        }catch (Exception ignore) {}
+                    }
                 } else if (doc.select("div#productDetails_feature_div").size() > 0) {
-
-                    log.info(task.getId() + " : productDetails_feature_div");
-
+                    Elements paramsEl = doc.select("div#productDetails_feature_div td");
+                    for (Element el : paramsEl) {
+                        try {
+                        params.add(el.text());
+                        }catch (Exception ignore) {}
+                    }
                 } else if (doc.select("div#detail-bullets").size() > 0) {
-
-                    log.info(task.getId() + " : detail-bullets");
-
+                    Elements paramsEl = doc.select("div#detail-bullets .content li");
+                    for (Element el : paramsEl) {
+                        try {
+                        el.select("b").remove();
+                        params.add(el.text());
+                        }catch (Exception ignore) {}
+                    }
                 } else if (doc.select("div#prodDetails").size() > 0) {
-
-                    log.info(task.getId() + " : prodDetails");
-
+                    Elements paramsEl = doc.select("div#prodDetails tr");
+                    for (Element el : paramsEl) {
+                        try {
+                        params.add(el.select("td").get(1).text());
+                        }catch (Exception ignore) {}
+                    }
                 } else if (doc.select("div#detailBullets").size() > 0) {
-
-                    log.info(task.getId() + " : detailBullets");
-
+                    Elements paramsEl = doc.select("div#detailBullets ul");
+                    Elements paramsEl1 = paramsEl.get(0).select("li");
+                    Elements paramsEl2 = paramsEl.get(1).select("li");
+                    Elements paramsEl3 = paramsEl.get(2).select("li");
+                    for (Element el : paramsEl1) {
+                        try {
+                            params.add(el.select("span span").get(1).text());
+                        }catch (Exception ignore) {}
+                    }
+                    for (Element el : paramsEl2) {
+                        try {
+                        params.add(el.select("span").get(1).text());
+                        }catch (Exception ignore) {}
+                    }
+                    for (Element el : paramsEl3) {
+                        try {
+                        params.add(el.select("span div").text());
+                        }catch (Exception ignore) {}
+                    }
                 } else if (doc.select("div#technicalSpecifications_feature_div").size() > 0) {
-
-                    log.info(task.getId() + " : technicalSpecifications_feature_div");
-
+                    Elements paramsEl = doc.select("div#technicalSpecifications_feature_div td");
+                    for (Element el : paramsEl) {
+                        try {
+                            params.add(el.text());
+                        }catch (Exception ignore) {}
+                    }
                 } else {
                     log.info("===========================================");
                     log.info("Fail: " + task.getId());
@@ -677,6 +725,51 @@ public class Amazon {
                 }
             } catch (Exception ignore) {ignore.printStackTrace();}
             shortInfo.setParams(params);
+
+            String vendor = "";
+            try {
+                vendor = doc.select("a#bylineInfo").text();
+                if (vendor.isEmpty()) {
+                    vendor = doc.select("a#brand").text();
+                }
+            } catch (Exception ignored) {}
+            shortInfo.setVendor(vendor);
+
+            Boolean availability = false;
+            try {
+                Elements inStockStatus = doc.select("div#availability");
+                availability = !inStockStatus.text().contains("unavailable");
+            } catch (Exception ignored) {
+            }
+            shortInfo.setAvailability(availability);
+
+            Boolean offerStatus = false;
+            try {
+                String newHref = doc.select("#olp_feature_div").text();
+                if (newHref.toLowerCase().contains("new")) {
+                    if (doc.select("#olp_feature_div a").size() > 0) {
+                        offerStatus = true;
+                    }
+                }
+                if (!offerStatus) {
+                    newHref = doc.select("#moreBuyingChoices_feature_div").text();
+                    if (newHref.toLowerCase().contains("new")) {
+                        if (doc.select("#moreBuyingChoices_feature_div a").size() > 0) {
+                            offerStatus = true;
+                        }
+                    }
+                }
+                if (!offerStatus) {
+                    newHref = doc.select("#toggleBuyBox").text();
+                    if (newHref.toLowerCase().contains("new")) {
+                        if (doc.select("#toggleBuyBox a").size() > 0) {
+                            offerStatus = true;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            shortInfo.setIsNew(offerStatus);
 
 
             result.add(shortInfo);
